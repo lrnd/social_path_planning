@@ -1,0 +1,548 @@
+#!/usr/bin/env python
+from __future__ import print_function, division
+
+import logging
+import cProfile
+import os
+import time
+import datetime
+import argparse
+import json
+
+import torch
+from torch import optim, autograd
+from torch.utils.data import DataLoader
+import numpy as np
+from sklearn import metrics
+
+import lstm_motion_model.utils
+from lstm_motion_model import models, datasets, utils, plot_utils
+
+try:
+    from torch.utils.tensorboard import SummaryWriter
+    tensorboard_available = True
+except ImportError as e:
+    print(e)
+    logging.warning('tensorboard could not be imported and will be disabled\n'
+                    'To use tensorboard install tensorflow and future:\n'
+                    'pip install tensorflow-gpu future')
+    tensorboard_available = False
+
+
+
+def assert_all_finite(tensors):
+    for tensor in tensors:
+        assert torch.isfinite(tensor).all()
+
+
+class Trainer:
+    def __init__(self):
+        self._tb_writer = None
+        self._device = None
+        self._debug = False
+
+        # Default training configuration parameters
+        self._config = {
+            'optimizer': 'adam',
+            'trials': 1,
+            'epochs': 100,
+            'k1': 20,
+            'sequence_length': None,
+            'device': 0,
+            'learning_rate': 1e-3,
+            'momentum': 0.0,
+            'rate_patience': 10,
+            'stop_patience': 30,
+            'weights': None,
+            'use_cuda': True,
+            'overfit': False,
+            'augment': True,
+            'debug': False,
+        }
+
+    def train_and_validate(self, model, training_dataset,
+                           validation_dataset, trial_id, tag=None):
+        if tag is None:
+            tag = ''
+        save_directory = 'runs/{}'.format(trial_id)
+        model_filename = '{}/{}model.pkl'.format(
+            save_directory, tag + '_' if tag else '')
+        win = tag + '_loss' if tag else 'loss'
+        loss_mon = utils.LossMonitor(self._config['stop_patience'])
+        model.train()
+        best_validation_loss = float('inf')
+        # best_model_state_dict = {}
+        loss_results = []
+        start_time = time.clock()
+        if self._config['optimizer'] == 'adam':
+            optimizer = optim.Adam(model.parameters(),
+                                   lr=self._config['learning_rate'],
+                                   amsgrad=True)
+        elif self._config['optimizer'] == 'sgd':
+            optimizer = optim.SGD(model.parameters(),
+                                  lr=self._config['learning_rate'],
+                                  momentum=self._config['momentum'])
+        elif self._config['optimizer'] == 'rmsprop':
+            optimizer = optim.RMSprop(model.parameters(),
+                                  lr=self._config['learning_rate'],
+                                  momentum=self._config['momentum'])
+        else:
+            raise ValueError(
+                '\"{}\" is not a recognised optimizer. '
+                'Check your config.'.format(
+                self._config['optimizer']))
+
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, factor=0.2, patience=self._config['rate_patience'],
+            verbose=True)
+
+        with autograd.set_detect_anomaly(self._debug):
+            for epoch in range(self._config['epochs']):
+
+                # Train on entire training dataset
+                model.train()
+                training_loss = self.tbptt(model, optimizer, training_dataset)
+
+                # Evaluate on entire validation dataset
+                model.eval()
+                with torch.no_grad():
+                    validation_loss = self.tbptt(model, optimizer,
+                                                 validation_dataset)
+
+                progress_loss = (training_loss if self._config['overfit']
+                                 else validation_loss)
+                remaining_patience = loss_mon.step(progress_loss)
+                scheduler.step(progress_loss)
+
+                if self._tb_writer is not None:
+                    loss_group = 'loss_{}'.format(tag) if tag else 'loss'
+                    self._tb_writer.add_scalar('{}/training'.format(loss_group),
+                                               training_loss, epoch)
+                    self._tb_writer.add_scalar('{}/validation'.format(loss_group),
+                                               validation_loss, epoch)
+                    self._tb_writer.flush()
+
+                elapsed_time = time.clock() - start_time
+                loss_results.append({
+                    'training_loss': training_loss,
+                    'validation loss': validation_loss,
+                    'elapsed_time': elapsed_time})
+
+                print('Epoch {:5d}  time: {:7.1f}  '
+                      'training: {:.3e}  validation: {:.3e}  '
+                      'patience: {:2d}'.format(
+                          epoch, elapsed_time, training_loss, validation_loss,
+                          remaining_patience))
+                for d in range(torch.cuda.device_count()):
+                    logging.debug('Memory footprint of device {}: {:.3e} MB'
+                                  .format(d, torch.cuda.max_memory_allocated(d))
+                                  )
+                    torch.cuda.reset_max_memory_allocated(d)
+
+                with open(save_directory + '/{}log.json'.format(
+                        tag + '_' if tag else ''), 'w') as f:
+                    json.dump(loss_results, f)
+
+                if validation_loss < best_validation_loss:
+                    best_validation_loss = validation_loss
+                    # best_model_state_dict = model.state_dict()
+                    torch.save(model.state_dict(), model_filename)
+                if loss_mon.stalled():
+                    print('Giving up after {} failed epochs'.format(
+                        loss_mon.patience))
+                    break
+
+        model.load_state_dict(torch.load(model_filename))
+        # model.load_state_dict(best_model_state_dict)
+        return model
+
+    @classmethod
+    def detach(cls, nested_tensors):
+        if isinstance(nested_tensors, tuple):
+            return tuple(cls.detach(t) for t in nested_tensors)
+        else:
+            if nested_tensors is not None:
+                return nested_tensors.detach()
+            else:
+                return None
+
+    def tbptt(self, model, optimizer, dataset):
+        # Grab config parameters
+        k1 = self._config['k1']
+        # Setup loss accumulator to report avg loss
+        total_loss = None
+        loss_count = 0
+
+        # For each sequence of multi person positions in the dataset
+        for pos_seq in DataLoader(dataset, shuffle=True):
+            batch_size, seq_len, num_people, dims = pos_seq.shape
+            assert batch_size == 1  # Batch dim created by dataloader
+            pos_seq = pos_seq.squeeze(0)  # Remove the batch dim
+
+            # Reset hidden state per sequence
+            hidden = model.init_hidden(num_people, pos_seq.device)
+
+            skipped_frames = 0
+            
+            # For each subsequence of length k1 in the total sequence
+            for start in range(model.before_length,
+                               seq_len - k1 - model.after_length, k1):
+                loss = None
+
+                # Which people are visible for at least two frames
+                # in the subsequence
+                valid_persons = (torch.isfinite(pos_seq[start:start + k1])
+                                 .all(-1).sum(0) >= 2)
+                logging.debug("{} / {} valid people".format(
+                    valid_persons.sum(), len(valid_persons)))
+
+                # If there is noone we can't compute a loss so skip out
+                if valid_persons.sum() == 0:
+                    skipped_frames += k1
+                    logging.info("No valid people, skipping subsequence.")
+                    continue
+
+                # Create tuple of hidden states for only the visible people
+                valid_hidden = tuple(h[:, valid_persons, :] for h in hidden)
+
+                model_input = model.prepare_input(pos_seq[:, valid_persons, :],
+                                                  start=start, stop=start + k1)
+
+                # import matplotlib.pyplot as plt
+                # plot_data = model_input[model._input_key].cpu()
+                # plt.scatter(plot_data[..., 0], plot_data[..., 1])
+                # plt.axis('equal')
+                # plt.show()
+
+                model.normalise_input(model_input)
+
+                # plot_data = model_input[model._input_key].cpu()
+                # plt.scatter(plot_data[..., 0], plot_data[..., 1])
+                # plt.axis('equal')
+                # plt.show()
+
+                # Do the forward pass
+                predicted, valid_hidden = model(model_input, valid_hidden)
+
+                # Update appropriate indicies of tensors inside the tuple
+                hidden = tuple(h.clone() for h in hidden)
+                for h, v in zip(hidden, valid_hidden):
+                    h[:, valid_persons, :] = v
+
+                # Compute the target outputs for this subsequence
+                target = model.prepare_target(
+                    pos_seq[:, valid_persons, :],
+                    start=start, stop=start + k1)
+
+                # import matplotlib.pyplot as plt
+                # plot_data = target[model._target_key].cpu()
+                # plt.scatter(plot_data[..., 0], plot_data[..., 1])
+                # plt.axis('equal')
+                # plt.show()
+
+                model.normalise_target(target)
+
+                # plot_data = target[model._target_key].cpu()
+                # plt.scatter(plot_data[..., 0], plot_data[..., 1])
+                # plt.axis('equal')
+                # plt.show()
+
+                # Compare predictions to targets to compute loss
+                # the model knows how to do this for itself
+                loss = model.compute_loss(predicted, target)
+
+                # If whole subsequence loss failed, skip backprop and
+                # accumulation
+                if loss is None:
+                    logging.warning('No loss computed for subsequence. '
+                                    'Skipping backprop')
+                    continue
+                if torch.isnan(loss):
+                    logging.warning('NaN loss computed for subsequence. '
+                                    'Skipping backprop')
+                    raise Exception('Nan loss')
+                    continue
+
+                if model.training:
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+
+                # Detach hidden state after each subsequence to truncate
+                # backpropagation
+                hidden = self.detach(hidden)
+
+                # Accumulate loss value for this subsequence
+                if total_loss is None:
+                    total_loss = loss.item()
+                else:
+                    total_loss += loss.item()
+                loss_count += 1
+
+            if skipped_frames:
+                logging.info('Skipped {}/{} frames'.format(
+                    skipped_frames, seq_len))
+
+        # Return loss value averaged over all valid subsequences
+        if loss_count == 0:
+            logging.warning('No losses computed for entire sequence.')
+            return None
+
+        return total_loss / loss_count
+
+    def test_model(self, model, forward_pass, test_dataset,
+                   compute_metrics=False):
+        with torch.no_grad():
+            avg_loss = 0
+            count = 0
+            if compute_metrics:
+                true_list = []
+                pred_list = []
+            for sequence in test_dataset:
+                output = forward_pass(model, sequence)
+                if output is not None:
+                    loss, true, pred = output
+                    if compute_metrics:
+                        true_list.append(true.cpu().numpy())
+                        pred_list.append(pred.argmax(dim=-1).cpu().numpy())
+                    avg_loss += loss.item()
+                    count += 1
+            if count == 0:
+                return (None, None) if compute_metrics else None
+            avg_loss /= count
+            if compute_metrics:
+                m = self.compute_aggregate_metrics(true_list, pred_list)
+                return avg_loss, m
+            else:
+                return avg_loss
+
+    @staticmethod
+    def compute_metrics(true, pred):
+
+        m = {
+            'accuracy': metrics.accuracy_score(true, pred),
+            'kappa': metrics.cohen_kappa_score(true, pred)
+        }
+        # m['precision'], m['recall'], m['fscore'], _ =\
+        # metrics.precision_recall_fscore_support(true, pred, average='macro')
+
+        print(' '.join(['{}: {:.2%}'.format(k, v) for k, v in m.items()]))
+        return m
+
+    def compute_aggregate_metrics(self, true_list, pred_list):
+        true = np.empty(0)
+        pred = np.empty(0)
+
+        for t, p in zip(true_list, pred_list):
+            true = np.append(true, t)
+            pred = np.append(pred, p)
+
+        m = self.compute_metrics(true, pred)
+        # true = true.astype(int)
+        # support = np.bincount(true[true >= 0], minlength=grid_resolution**2)
+        # plt.imshow(support.reshape(grid_resolution, grid_resolution))
+        # plt.show()
+
+        return m
+
+    @staticmethod
+    def parse_args():
+        # Parse command line args
+        parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+        parser.add_argument('config',
+                            help='Configure training using provided json file')
+        parser.add_argument('-w', '--weights',
+                            help='Initialise model with pretrained weights')
+        parser.add_argument('-t', '--training-data',
+                            help='Train on csv dataset(s) provided',
+                            nargs='+', required=True)
+        parser.add_argument('-v', '--validation-data',
+                            help='Validate on csv dataset(s) provided',
+                            nargs='+', required=True)
+        parser.add_argument('-n', '--trials', type=int,
+                            help='How many trials to run')
+        parser.add_argument('-e', '--epochs', type=int,
+                            help='How many epochs to train for')
+        parser.add_argument('-k', '--k1', type=int,
+                            help='Stride for truncated backpropagation '
+                                 'through time. (k1 in TBPTT paper)')
+        parser.add_argument('-l', '--sequence-length', type=int,
+                            help="Chunk sequences into specified length")
+        parser.add_argument('--no-cuda', dest='use_cuda', action='store_false',
+                            help='Disable CUDA')
+        parser.add_argument('--device', type=int,
+                            help='Select cuda device to use by integer id')
+        parser.add_argument('-r', '--learning-rate', type=float,
+                            help='Set intial learning rate for the optimiser')
+        parser.add_argument('--rate-patience', type=int,
+                            help='Number of failed epochs before learning '
+                                 'rate is reduced')
+        parser.add_argument('--stop-patience', type=int,
+                            help='Number of failed epochs before learning is '
+                                 'stopped')
+        parser.add_argument('--overfit', action='store_true',
+                            help='Check epoch progress based on training loss')
+        parser.add_argument('--no-augment', action='store_false',
+                            dest='augment',
+                            help='Disable input data augmentation')
+        parser.add_argument('-d', '--debug', action='store_true',
+                            help='Enable debug mode')
+        parser.add_argument('-p', '--profile', nargs='?',
+                            const='train.profile', default=None,
+                            help='Enable profiling')
+
+        return parser.parse_args()
+
+    def run(self, args):
+
+        # Override default configuration from file
+        with open(args.config, 'r') as f:
+            self._config.update(json.load(f))
+
+        # Override configuration with CLI args
+        self._config.update(vars(args))
+
+        use_cuda = self._config['use_cuda'] and torch.cuda.is_available()
+        self._device = torch.device('cuda:{}'.format(self._config['device'])
+                                    if use_cuda else 'cpu')
+        self._config['training_device'] = str(self._device)
+
+        if self._config['debug']:
+            print('Debug mode enabled')
+
+        print('Using device: {}'.format(self._device))
+
+        if self._config['weights']:
+            print('Loading model weights from {}...'.format(self._config['weights']))
+            pretrained_state = torch.load(
+                self._config['weights'], map_location=self._device)
+        else:
+            pretrained_state = None
+
+        if self._config['augment']:
+            print('Enabling input data augmentation')
+            # Compose dataset transform functions
+
+            def data_transform(seq):
+                return lstm_motion_model.utils.random_rotate_tensor(
+                    lstm_motion_model.utils.random_offset_tensor(
+                        lstm_motion_model.utils.random_flip_tensor(seq),
+                        -5.0, 5.0))
+        else:
+            print('Disabling input data augmentation')
+            data_transform = None
+
+        # Load training and validation data
+        print('Loading training trajectories from:\n' +
+              '\n'.join(self._config['training_data']))
+        training_trajectories = datasets.CrowdSequenceDataset(
+            self._config['training_data'],
+            self._config['sequence_length'],
+            device=self._device,
+            transform=data_transform)
+
+        print('Loading validation trajectories from:\n' +
+              '\n'.join(self._config['validation_data']))
+        validation_trajectories = datasets.CrowdSequenceDataset(
+            self._config['validation_data'], self._config['sequence_length'],
+            device=self._device,
+            transform=data_transform)
+
+        if training_trajectories and validation_trajectories:
+            print('Begin training')
+            config_name = os.path.basename(self._config['config'])
+            config_name = os.path.splitext(config_name)[0]
+            datestamp = '{:%Y-%m-%d-%H-%M-%S}'.format(datetime.datetime.now())
+            for trial in range(self._config['trials']):
+                trial_id = '{}_{}_{:02d}'.format(config_name, datestamp, trial)
+                save_directory = 'runs/{}'.format(trial_id)
+                print('Starting trial {}'.format(trial_id))
+                os.makedirs(save_directory)
+                with open(save_directory + '/config.json', 'w') as f:
+                    json.dump(self._config, f)
+
+                start_time = time.clock()
+
+                # Create an instance of the network
+                print('Initialising model')
+                model = models.instantiate_model(self._config['model_type'],
+                                                 self._config['model_args'],
+                                                 self._device)
+
+                if tensorboard_available:
+                    self._tb_writer = SummaryWriter(log_dir=save_directory)
+
+                if self._tb_writer is not None:
+                    model.tb_writer = self._tb_writer
+                    self._tb_writer.add_text('config', json.dumps(
+                        self._config, indent=4, sort_keys=True))
+
+                if pretrained_state:
+                    print('Applying pretrained weights')
+                    model.load_state_dict(pretrained_state)
+                if 'modes' in self._config:
+                    modes = self._config['modes']
+                else:
+                    modes = [None]
+
+                for mode in modes:
+                    if mode:
+                        print('Set model mode to {}'.format(mode))
+                        model.mode(mode)
+
+                    if self._tb_writer is not None:
+                        loss_group = 'loss_{}'.format(mode) if mode else 'loss'
+                        self._tb_writer.add_custom_scalars_multilinechart(
+                            ['{}/training'.format(loss_group),
+                             '{}/validation'.format(loss_group)],
+                            category='loss', title=loss_group)
+
+                    print('Computing normalisation parameters...')
+                    self.compute_normalisation_parameters(
+                        model, training_trajectories)
+
+                    # Train the model and return the best one
+                    print('Training...')
+                    model = self.train_and_validate(
+                        model, training_trajectories, validation_trajectories,
+                        trial_id, tag=mode)
+
+                if self._tb_writer is not None:
+                    self._tb_writer.close()
+                    model.tb_writer = self._tb_writer
+
+                elapsed_time = time.clock() - start_time
+                print('Trial {} complete in {} seconds'.format(
+                      trial_id, elapsed_time))
+            print('Training Complete!')
+
+    def compute_normalisation_parameters(self, model, dataset):
+        model.release_normalisation_data()
+        model.clear_normalisation_parameters()
+        k1 = self._config['k1']
+        for pos_seq in DataLoader(dataset):
+            batch_size, seq_len, num_people, dims = pos_seq.shape
+            assert batch_size == 1  # Batch dim created by dataloader
+            pos_seq = pos_seq.squeeze(0)  # Remove the batch dim
+            for start in range(model.before_length,
+                               seq_len - k1 - model.after_length, k1):
+                valid_persons = (torch.isfinite(pos_seq[start:start + k1])
+                                 .all(-1).sum(0) >= 2)
+                logging.debug("{} / {} valid people".format(
+                    valid_persons.sum(), len(valid_persons)))
+
+                # If there is noone we can't compute a loss so skip out
+                if valid_persons.sum() == 0:
+                    logging.info("No valid people, skipping subsequence.")
+                    continue
+                model.accumulate_normalisation_data(pos_seq[:, valid_persons, :], start, start + k1)
+        model.compute_normalisation_parameters()
+        model.release_normalisation_data()
+
+if __name__ == '__main__':
+    trainer = Trainer()
+    args = trainer.parse_args()
+    if args.profile:
+        cProfile.run('trainer.run(args)', args.profile)
+    else:
+        trainer.run(args)

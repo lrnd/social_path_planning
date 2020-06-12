@@ -1,0 +1,63 @@
+digraph simple {
+    layout=dot;
+    /*ranksep=0.2;*/
+    node [style=filled, fontname="sans serif", fontsize=12];
+    edge [fontname="sans serif", fontsize=10, labelfontsize=10, labelangle=0];
+
+    { // MLP Nodes
+        node [shape="record", fillcolor="0.3,0.5,1.0"]
+        embedding [label="{MLP [2x64]|LeReLU}"]
+        globalise [label="{Globalise|MLP [2x128]|LeakyReLU}"]
+        localise [label="{Localise|MLP [2x128]|LeReLU}"]
+        regression [label="{MLP [2x256]|LeReLU}"]
+    }
+
+    { // Linear Nodes
+        node [shape=box, fillcolor="0.5,0.5,1.0"]
+        output_layer [label="FC"]
+    }
+
+    { // LSTM Nodes
+        node [shape=box, fillcolor="0.2,0.5,1.0"]
+        rnn [label="LSTM [2x64]"]
+    }
+
+    { // Inputs
+        node [shape=plaintext, fillcolor="none",  width=0, height=0];
+        rank=min;
+        velocity [label="V"];
+        position [label="X"];
+        Gj [label="Gj"]
+        h_prev [label="H(t-1)"];
+    }
+    { // Outputs
+        node [shape=plaintext, fillcolor="none",  width=0, height=0];
+        rank=max
+        output [label="V pred"];
+        Gi
+        h [label="H"];
+    }
+
+    { // Operations
+        node [shape=oval, fillcolor="0.9,0.5,1.0", width=0.2, height=0.2];
+        max [label="max"];
+    }
+
+    // Edges
+    max -> localise [label=" 128"];
+    velocity -> embedding [label=" 2"];
+    position -> globalise [label=" 2"];
+    position -> localise [label=" 2"];
+
+    embedding -> rnn [label=" 64"];
+    rnn -> globalise [label=" 64"];
+    localise -> regression [label=" 128"];
+    rnn -> regression [label=" 64"];
+
+    regression -> output_layer [label=" 256"];
+    output_layer -> output [label=" 2"];
+    globalise -> Gi; Gj -> max;
+    Gj -> max;
+    Gj -> max;
+    h_prev -> rnn -> h;
+}

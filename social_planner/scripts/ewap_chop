@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+import os
+
+def main():
+    # Parse command line args
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_file')
+    parser.add_argument('-p', '--plot', action='store_true')
+    args = parser.parse_args()
+
+    # Load input file and compute stats
+    data = np.genfromtxt(args.input_file)
+    frames = data[:, 0].astype(int)
+    unique_frames = np.unique(frames)
+    # Count how many frames with data
+    num_frames = len(unique_frames)
+    print('{} frames of data'.format(num_frames))
+    # Compute gap stats
+    diffs = np.diff(unique_frames, prepend=unique_frames[0])
+    mode = stats.mode(diffs).mode[0]
+    print('Most gaps are {} frames'.format(mode))
+    print('Biggest gaps {} '.format(np.flip(np.sort(diffs))[:5]))
+
+    if args.plot:
+        plot_frame_diffs(unique_frames, diffs)
+
+    # Prompt user for gap thresh
+    try:
+        gap_thresh = int(input('Enter gap size to chop (enter to skip) :'))
+    except Exception:
+        gap_thresh = None
+
+    if gap_thresh is not None and gap_thresh > 0:
+        chop_at_gaps(data, gap_thresh, args.input_file)
+        exit()
+
+    # Prompt user for number of chunks
+    try:
+        num_chunks = int(input('Enter how many even chunks you want (enter to skip) :'))
+    except Exception:
+        num_chunks = None
+
+    if num_chunks is not None and num_chunks > 1:
+        chop_into_equal_chunks(data, num_chunks, args.input_file)
+        exit()
+
+
+def plot_frame_diffs(unique_frames, diffs):
+    fig, axes = plt.subplots(2, 1)
+    axes[0].plot(unique_frames)
+    axes[1].plot(diffs)
+    print('Press q to close plot')
+    plt.show()
+
+def chop_into_equal_chunks(data, num_chunks, input_file):
+    frames = data[:, 0].astype(int)
+    filename, ext = os.path.splitext(input_file)
+    unique_frames = np.unique(frames)
+    # Count how many frames with data
+    num_frames = len(unique_frames)
+    chunk_size = (num_frames // num_chunks) + 1
+    chunk_num = 0
+    end_unique_idx = 0
+    end_idx = 0
+
+    print('Saving chunks:')
+    while end_idx < len(frames):
+        start_unique_idx = end_unique_idx
+        end_unique_idx += chunk_size
+
+        start_frame = unique_frames[start_unique_idx]
+        start_idx = (frames == start_frame).nonzero()[0][0]
+
+        if end_unique_idx < len(unique_frames):
+            end_frame = unique_frames[end_unique_idx]
+            end_idx = (frames == end_frame).nonzero()[0][0]
+        else:
+            end_idx = len(frames)
+
+        output_file = '{}_{}{}'.format(filename, chunk_num, ext)
+        np.savetxt(output_file, data[start_idx:end_idx])
+        print(output_file)
+
+        chunk_num += 1
+
+def chop_at_gaps(data, gap_thresh, input_file):
+    frames = data[:, 0].astype(int)
+    filename, ext = os.path.splitext(input_file)
+    unique_frames = np.unique(frames)
+    diffs = np.diff(unique_frames, prepend=unique_frames[0])
+    gap_frames = unique_frames[diffs > gap_thresh]
+    print('{} gaps found'.format(len(gap_frames)))
+
+    if len(gap_frames) > 0:
+        print('Saving chunks:')
+        gap_indicies = [(frames == f).nonzero()[0][0] for f in gap_frames]
+        chunk_num = 0
+        for start, end in zip(
+                [0] + gap_indicies,
+                gap_indicies + [len(frames)]):
+            output_file = '{}_{}{}'.format(filename, chunk_num, ext)
+            np.savetxt(output_file, data[start:end])
+            print(output_file)
+            chunk_num += 1
+
+if __name__ == '__main__':
+    main()

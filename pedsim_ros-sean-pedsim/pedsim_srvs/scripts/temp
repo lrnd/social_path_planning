@@ -1,0 +1,43 @@
+
+#!/usr/bin/env python
+
+from pedsim_srvs.srv import GetTrackedPersons 
+from geometry_msgs.msg import Point
+import rospy
+
+tp = None
+
+def poseCallback(data):
+    global tp 
+    tp = data
+
+def handle_get_all_persons(req):
+    print "returning agent states "
+    pos_array = []
+    pos = Point()
+    #Point pos
+    if tp is not None:
+        for i in req.agent_ids:
+            pos = tp.tracks[i].pose.pose.position
+            pos_array[i] = pos
+    return pos
+
+
+def get_all_tracked_persons_server():
+    rospy.init_node('get_all_tracked_persons_server')
+    s = rospy.Service('get_all_tracked_persons', GetTrackedPersons,
+    handle_get_all_persons)
+    print "ready to get agent states"
+    #rospy.spin()
+
+def tracked_persons_listener():
+    rospy.init_node('tracked persons listener')
+    l = rospy.Subscriber('/pedsim_visualizer/tracked_persons', TrackedPersons,
+    poseCallback)
+    print "listening to agent states"
+
+
+if __name__ == "main":
+    get_all_agents_tracked_persons()
+    tracked_persons_listener()
+    rospy.spin()

@@ -1,0 +1,614 @@
+#!/usr/bin/env python
+
+from __future__ import absolute_import, division, print_function
+
+import rospy
+import argparse
+import json
+import torch
+import time
+import math
+import random
+
+import lstm_motion_model.utils
+from numpy import empty
+from lstm_motion_model.robot import Robot
+from lstm_motion_model import models, datasets, robot_plots
+from pedsim_srvs.srv import GetAgentPos
+from geometry_msgs.msg import *
+from std_srvs.srv import Empty 
+
+#TODO make these part of function, not global
+global num_agents 
+global num_paths 
+global min_seq_req
+global rbt_steps 
+global p_weight
+global d_weight
+global max_work_per_ped
+#will need to change this, can pass as argument
+num_agents = 29 
+num_paths =3
+min_seq_req = 3
+rbt_steps = 15 
+p_weight = 1
+d_weight = 2
+max_work_per_ped = 3
+
+def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-w', '--weights',
+                        help='Load model weights from pickle file')
+    parser.add_argument('-c', '--config',
+                        help='Config json file use to instantiate the model',
+                        default='config.json')
+   # parser.add_argument('-i', '--input', nargs='+',
+   #                     help='Run inference on csv dataset(s) provided',
+   #                     required=True)
+    parser.add_argument('-s', '--sample-steps',
+                        help='Number of steps to recursively sample',
+                        default=0, type=int)
+    parser.add_argument('-m', '--mode', type=str, default=None,
+                        help='Plot data with model in given mode')
+    parser.add_argument('-o', '--output', help='Save predictions to pkl file',
+                        default='results.pkl')
+    parser.add_argument('-t', '--stochastic',
+                        help='When forecasting with a probabilistic model, '
+                        'sample the distribution',
+                        action='store_true')
+    parser.add_argument('-a', '--augment',
+                        help='Apply random augentation to test data',
+                        action='store_true')
+    parser.add_argument('--no-cuda', action='store_true', help='Disable CUDA')
+    parser.add_argument('--device', type=int, default=0, help='Choose device')
+    parser.add_argument('-p', '--plot', 
+                        help='Plot scenarious with the different paths',
+                        default=False, type=bool)
+
+    args = parser.parse_args()
+
+    #initialise Ros node
+    rospy.init_node("inference")
+    rospy.loginfo("inference running")
+    pause_sim(False)
+
+    # TODO Fix device management to pick by integer
+    use_cuda = (not args.no_cuda) and torch.cuda.is_available()
+    device = torch.device('cuda:{}'.format(args.device) if use_cuda else 'cpu')
+
+    # Load model config from file and use it to create the model
+    print('Loading model config from {}...'.format(args.config))
+    with open(args.config, 'r') as f:
+        config = json.load(f)
+        print('Creating model from config...')
+        model = models.instantiate_model(config['model_type'],
+                                         config['model_args'], device)
+
+
+
+    # Load model weights from file
+    if args.weights:
+        print('Loading model weights from {}...'.format(args.weights))
+        model.load_state_dict(torch.load(args.weights, map_location=device))
+    else:
+        print('### WARNING ###')
+        print('No weights loaded, fine for a simple model but not for a '
+              'learned model')
+    model.eval()
+
+    if args.mode:
+        try:
+            model.mode(args.mode)
+            print('Set mode to {}'.format(args.mode))
+        except AttributeError:
+            print('This model does not support mode changes')
+
+    ##need to pass in the time sequence to generate path for
+    #create robot with its pos and goal and speed
+    #hardcoded for now
+    robot_pos = [-11, 2]
+    robot_goal_pos = [9,-3]
+    #creating robot
+    rbt = Robot(robot_pos, robot_goal_pos, ped_buf=0.3)
+
+    print('robot pos: ', robot_pos)
+    print('robot goal: ', robot_goal_pos)
+
+#wrap this is loop while robot_pos != goal +- buffer
+
+    #get data from sim to create dataset just ped ground truths
+    dataset = torch.zeros((1, min_seq_req, num_agents, 2), dtype=torch.float,
+    device=device)
+    #get data from sim to create dataset with robot
+    dataset_rbt = torch.zeros((num_paths, rbt_steps, num_agents+1, 2), dtype=torch.float,
+    device=device)
+
+    dataset_2= torch.zeros((num_paths, rbt_steps, num_agents, 2), dtype=torch.float,
+    device=device)
+
+    ids = []
+    pos = []
+    for i in range(num_agents):
+        ids.append(i)
+    #print(len(ids))
+
+    #generates the min number of recorded position for APG
+    for i in range(min_seq_req):
+        pos.append(get_ped_positions(ids))
+        time.sleep(0.2)
+
+    pause_sim(True)
+    #print pedestrian positions for clarity
+    #print('ped positions', pos[min_seq_req-1])
+
+    #add pedestrian data into dataset, atm just one set
+    for i in range(min_seq_req):
+        for j in range(len(ids)):
+            dataset[0][i][j][0] = pos[i][j][0]
+            dataset[0][i][j][1] = pos[i][j][1]
+
+    print(dataset.shape)
+
+    #get predictions based on pedestrians positions without robot in path
+    #-potential add robot as static obsticle to get more accurate
+    #ground truths
+    print('Computing predictions...')
+    #init_predictions = compute_social_predictions(
+    #    model, dataset, args.sample_steps, device, stochastic=args.stochastic)
+    init_predictions = compute_social_predictions(
+        model, dataset, args.sample_steps, device, stochastic=args.stochastic)
+
+    #print('init_predictions\n',init_predictions[0]['position'][0][7])
+
+    ground_truths = torch.zeros((rbt_steps, num_agents, 2), dtype=torch.float,
+    device=device)
+
+    #testing for simple
+    #print(len(init_predictions[0]['position'][0][0]))
+    #print(init_predictions[0]['position'][0][0][0][0])
+    ##print(init_predictions[0]['prediction'][0][0][0][1])
+    #print(init_predictions[0])
+    #addding the ground truths into dataset to fit prediction framework
+    #TODO this needs to be updated to feed predictions back into model
+    #ignoring the robots prediction and using its calculated path
+    #TODO check this
+    for j in range(len(ids)):
+        ground_truths[0][j][0] = pos[-1][j][0]
+        ground_truths[0][j][1] = pos[-1][j][1]
+        for p in range(num_paths):
+            dataset_rbt[p][0][j][0] = pos[-1][j][0]
+            dataset_rbt[p][0][j][1] = pos[-1][j][1]
+
+   # print(init_predictions)
+   #         
+   # for j in range(len(ids)):
+   #     for i in range(rbt_steps):
+   #         for p in range(num_paths):
+   #             dataset_2[p][i][j][0] =\
+   #             init_predictions[0]['position'][0][j][0][i][0]
+   #             dataset_2[p][i][j][1] =\
+   #             init_predictions[0]['position'][0][j][0][i][1]
+   # init_predictions = compute_social_predictions(
+   #     model, dataset_2, args.sample_steps, device, stochastic=args.stochastic)
+   ##if model not simple
+   #                #ped_path[s][a][0] = predictions[p]['true_position'][s][a][0]
+   #                #ped_path[s][a][1] = predictions[p]['true_position'][s][a][1]
+   # for j in range(len(ids)):
+   #     for i in range(rbt_steps):   #+1??
+   #         for p in range(num_paths):
+   #             if config['model_type'] != 'simple':
+   #                 dataset_rbt[p][i][j][0] =\
+   #                 init_predictions[0]['true_position'][i][j][0]
+   #                 dataset_rbt[p][i][j][1] =\
+   #                init_predictions[0]['true_position'][i][j][1]
+   #             else:
+   #                 dataset_rbt[p][i][j][0] =\
+   #                 init_predictions[0]['position'][i][j][0][0]
+   #                 dataset_rbt[p][i][j][1] =\
+   #                 init_predictions[0]['position'][i][j][0][1]
+   # 
+   #         if config['model_type'] != 'simple':
+   #             ground_truths[i][j][0] =\
+   #             init_predictions[0]['true_position'][i][j][0]
+   #             ground_truths[i][j][1] =\
+   #             init_predictions[0]['true_position'][i][j][1]
+   #         else:
+   #             ground_truths[i][j][0] =\
+   #             init_predictions[0]['position'][i][j][0][0]
+   #             ground_truths[i][j][1] =\
+   #             init_predictions[0]['position'][i][j][0][1]
+    for j in range(len(ids)):
+        #for i in range(rbt_steps):
+        for i in range(3):
+            for p in range(num_paths):
+                if config['model_type'] != 'simple':
+                    dataset_rbt[p][i][j][0] =\
+                    init_predictions[0]['position'][0][j][0][i][0]
+                    dataset_rbt[p][i][j][1] =\
+                   init_predictions[0]['position'][0][j][0][i][1]
+                else:
+                    dataset_rbt[p][i][j][0] =\
+                    init_predictions[0]['position'][i][j][0][0]
+                    dataset_rbt[p][i][j][1] =\
+                    init_predictions[0]['position'][i][j][0][1]
+    
+        for i in range(rbt_steps):
+            if config['model_type'] != 'simple':
+                ground_truths[i][j][0] =\
+                init_predictions[0]['position'][0][j][0][i][0]
+                ground_truths[i][j][1] =\
+                init_predictions[0]['position'][0][j][0][i][1]
+            else:
+                ground_truths[i][j][0] =\
+                init_predictions[0]['position'][i][j][0][0]
+                ground_truths[i][j][1] =\
+                init_predictions[0]['position'][i][j][0][1]
+
+    #if model simple
+
+    #convert pedestrain positions to obsticle list for rrt, take last pos a
+    #as most valid
+    obsticlelist = pos[-1]
+
+    #list for storing path options for rbt
+    rbt_paths = []
+    #getting a path using rrt
+    for p in range(num_paths):              #whats going on here TODO
+        print('generating a path')
+        if p > 0:
+            rbt.UpdatePos([-5, -3, 0])
+            rbt.UpdateGoal([-6, 4])
+        if p > 1:
+            rbt.UpdatePos([12, 5, 0])
+            rbt.UpdateGoal([-10, 4])
+        rbt_path = rbt.GeneratePath(obsticlelist)
+        rbt_path_for_predic = rbt_path
+        if rbt_path is None:
+            print('no path found')
+            #try again  TODO check this works in python
+            p= p-1
+            continue
+        #check if using rrt with theta value
+        if len(rbt_path[0]) == 3:
+            #remove theta value as not needed for APG-LSTM
+            for i in rbt_path_for_predic:
+                i.pop()
+        rbt_paths.append(rbt_path_for_predic)
+        #add rbt path to data set only add first rbt_steps
+        r_seq = 0
+        #TODO check APG re-calculations
+        for l in range(rbt_steps):
+            dataset_rbt[p][r_seq][num_agents][0] =\
+            rbt_path_for_predic[l][0]
+            rbt_path_for_predic[l][1]
+            r_seq +=1
+        #for (x,y) in rbt_path_for_predic and r_seq <= rbt_steps:
+        #    if x == robot_pos[0] and y == robot_pos[1]:
+        #        continue
+        #    dataset_rbt[p][r_seq][num_agents][0] = x
+        #    dataset_rbt[p][r_seq][num_agents][1] = y
+        #    r_seq +=1
+        #    #if r_seq >= rbt_steps:
+        #    #    continue 
+
+    #print(dataset_rbt.shape)
+
+    print('Computing predictions...')
+    predictions = compute_social_predictions(
+        model, dataset_rbt, args.sample_steps, device, stochastic=args.stochastic)
+
+    #print('predictions')
+    #print(len(predictions[0]['position'][0][0][0][0]))
+    #for k in range(len(dataset_rbt)):
+    #    #print('path given')
+    #    for rb in range(r_seq):
+            #print(predictions[k]['true_position'][rb][num_agents])
+        #print('true\n', predictions[k]['true_position'][7])
+        #print('predictions\n', predictions[k]['position'][7][7])
+
+    #difference in paths for the various sequences
+
+    ped_path = torch.zeros((rbt_steps, num_agents, 2), dtype=torch.float,
+    device=device)
+
+    final_ped= torch.zeros((rbt_steps, num_agents, 2), dtype=torch.float,
+    device=device)
+    cost_cmp = 10000
+    final_path = -1
+    for p in range(len(dataset_rbt)):
+        #print(p)
+        for s in range(rbt_steps):
+            for a in range(num_agents):
+                if config['model_type'] != 'simple':
+                #TODO what is the proper way??
+                    if s > 3:
+                        ped_path[s][a][0] = predictions[p]['position'][0][a][0][s][0]
+                        ped_path[s][a][1] = predictions[p]['position'][0][a][0][s][1]
+
+                        ped_path[s][a][0] = (ped_path[s][a][0] +\
+                        predictions[p]['position'][1][a][0][s][0])/2
+                        ped_path[s][a][1] = (ped_path[s][a][1] +\
+                        predictions[p]['position'][1][a][0][s][1])/2
+                    else:
+                        ped_path[s][a][0] = predictions[p]['true_position'][s][a][0]
+                        ped_path[s][a][1] = predictions[p]['true_position'][s][a][1]
+                else:
+                    ped_path[s][a][0] = predictions[p]['position'][i][j][0][0]
+                    ped_path[s][a][1] = predictions[p]['position'][i][j][0][1]
+        cost = evaluate_path(ground_truths, ped_path, rbt_paths[p], rbt)
+        print('cost for path ',p,cost)
+        robot_plots.plot_path_with_predictions(ground_truths, ped_path, rbt_paths[p])
+        if cost < cost_cmp:
+            cost_cmp = cost
+            final_path = p
+            final_ped = ped_path
+
+    #if args.plot:
+    #    plot_scenarios()
+    robot_plots.plot_chosen_path(final_ped, rbt_paths[final_path])
+
+    pause_sim(False)
+
+    #actions paths
+        #update robot pos/goal
+
+    # Save predictions to file
+    with open(args.output, 'wb+') as f:
+        torch.save((predictions, config), f)
+
+def evaluate_path(ground_truths, predictions, rbt_path, robot):
+    percent= PercentToTarget(rbt_path[0], rbt_path[rbt_steps-2],\
+    robot.GetGoal())
+
+    #compare to max allowable work per ped
+    disturb_cmp = max_work_per_ped * num_agents
+    disturb = disturbance(ground_truths, predictions)
+    #if disturb > disturb_cmp:
+    #    #this makes this path very unlikely
+    ##    disturb = 5
+    #    print('over')
+    #else:
+    #    disturb /= disturb_cmp
+    disturb /= disturb_cmp
+    print('perecnt, dist',percent,disturb)
+    return percent*p_weight + disturb*d_weight
+
+def PercentToTarget(pos_start, pos_fin, goal):
+    d1 = calcDistance(pos_start, goal)
+    d2 = calcDistance(pos_fin, goal)
+    #d3 = d1-d2
+    return d2/d1
+
+def disturbance(ground, predict):
+    #convert from tensor x, y to array polar r, theta
+
+    polar_ground = empty([num_agents, rbt_steps-2, 2])
+    polar_base= empty([num_agents, rbt_steps-2, 2])
+    polar_predict = empty([num_agents, rbt_steps-2, 2])
+    for a in range(num_agents):
+        for s in range(rbt_steps-2):
+            polar_ground[a][s] = calc_distance_and_angle(ground[s][a],
+            ground[s+1][a])
+
+            #print('polar')
+           # polar_base[a][s] = calc_distance_and_angle(ground[s][a]+5,
+           # ground[s+1][a]+5)
+
+            polar_predict[a][s] = calc_distance_and_angle(predict[s][a],
+            predict[s+1][a])
+
+    disturb = 0
+    disturb_base = 0
+    #print(polar_predict)
+    for ag in range(num_agents):
+        for i in range(rbt_steps-2):
+            #print('theta', polar_ground[ag][i][0])
+            disturb += abs(polar_ground[ag][i][1] -\
+            polar_predict[ag][i][1]) + \
+            abs((polar_ground[ag][i][0]**2 - polar_predict[ag][i][0]**2)/2)
+
+    print('dist', disturb)
+    return disturb
+
+def calcDistance(from_pos, to_pos):
+    dx = to_pos[0] - from_pos[0]
+    dy = to_pos[1] - from_pos[1]
+    d = math.hypot(dx, dy)
+    return d
+
+def calc_distance_and_angle(from_pos, to_pos):
+    dx = to_pos[0] - from_pos[0]
+    dy = to_pos[1] - from_pos[1]
+    d = math.hypot(dx, dy)
+    theta = math.atan2(dy, dx)
+    #print(d, theta)
+    return d, theta
+
+def pause_sim(cmd):
+    if cmd:
+        print('pausing sim')
+       # rospy.wait_for_service('pedsim_simulator/pause_simulation')
+        try:
+            pause = rospy.ServiceProxy('pedsim_simulator/pause_simulation',
+            Empty)
+            pause()
+        except rospy.ServiceException as e:
+            print("service call failed: %s"%e)
+
+    else:
+        print('unpausing sim')
+       # rospy.wait_for_service('pedsim_simulator/unpause_simulation')
+        try:
+            unpause = rospy.ServiceProxy('pedsim_simulator/unpause_simulation',
+            Empty)
+            unpause()
+        except rospy.ServiceException as e:
+            print("service call failed: %s"%e)
+
+def get_ped_positions(ids):
+    print("asking for positions")
+    rospy.wait_for_service('get_all_tracked_persons')
+    positions = empty([len(ids), 2])
+    try:
+        getStates = rospy.ServiceProxy('get_all_tracked_persons',
+        GetAgentPos)
+        states = getStates(ids)
+        # convert from geometry_msgs Point (x, y, z) to array(i{x,y})
+        for i in ids:
+            positions[i][0] = states.persons[i].x
+            positions[i][1] = states.persons[i].y
+        return positions
+    except rospy.ServiceException as e:
+        print ("Service call failed: %s"%e)
+
+@torch.no_grad()
+def compute_social_predictions(model, dataset, sample_steps, device,
+                               stochastic=False):
+    model.eval()
+    assert sample_steps >= 0
+
+    # Create list to store output for each sequence
+    results = []
+    # Iterate through the sequences
+    for pos_seq in dataset:
+        # Extract dims of the position sequence for readability
+        seq_len, num_people, dims = pos_seq.shape
+
+        # Create an empty dict to store results of this sequence
+        results.append({})
+        # Create a hidden state per person if applicable
+        try:
+            hidden = model.init_hidden(num_people, device)
+        except AttributeError as e:
+            print(e)
+            print('init_hidden not implemented. Assuming non-recursive model')
+            hidden = None
+
+        # Store input sequence
+        results[-1]['true_position'] =\
+            pos_seq[0:seq_len]
+
+        # Create empty dict to accumulate outputs over the sequence
+        outputs_this_sequence = {}
+
+        output_length = rbt_steps - model.before_length
+        valid_frames = torch.zeros((output_length,), dtype=bool,
+                                   device=pos_seq.device)
+        output_frame = 0
+
+        # Loop through each frame of the sequence (skip first frame)
+        #for i in range(model.before_length, seq_len-model.after_length):
+        for i in range(2, seq_len):
+            #print('pos-seq shape', pos_seq.shape)
+            #print(pos_seq)
+
+            # Store input sequence
+            #results[-1]['true_position'] =\
+            #    pos_seq[0:seq_len]
+            hidden = model.init_hidden(num_people, device)
+
+            valid_persons = torch.isfinite(
+                pos_seq[:]
+            ).all(-1).all(0)
+
+            if valid_persons.sum() > 0:
+                valid_frames[output_frame] = True
+                #print("valid_persons sum", valid_persons.sum())
+
+                model_input = model.prepare_input(pos_seq[:, valid_persons, :],
+                                                  start=i, stop=i+1)
+               # model_input = model.prepare_input(pos_seq[:, :, :],
+               #                                   start=i, stop=seq_len)
+                model.normalise_input(model_input)
+
+#for mine all are hidden are valid, could remove this check?
+                #print("hidden", hidden)
+                if hidden is None:
+                    #print('hidden none')
+                    model_output = model(model_input)
+                else:
+                    # Extract the valid slices of 'hidden'
+                    valid_hidden = tuple(h[:, valid_persons, :] for h in hidden)
+                    #valid_hidden = tuple(hidden)
+                    model_output, valid_hidden = model(
+                        model_input, valid_hidden)
+                    # Update the valid slices of 'hidden'
+                    for h, v in zip(hidden, valid_hidden):
+                        h[:, valid_persons, :] = v
+
+                model_output.update(model.sample_output(
+                    model_output, stochastic))
+                model.unnormalise_target(model_output)
+                model_input = model.propagate_input(model_input, model_output)
+                model_output.update(model_input)
+
+                # Start a list per item in model_output
+                outputs_this_step = {}
+                for k, v in model_output.items():
+                    outputs_this_step[k] = [v]
+
+                #this is feeding steps back into model?? -->recurrent feature??
+                #print('sample steps', sample_steps)
+                #sample_steps = 3
+                for j in range(sample_steps):
+                    if hidden is None:
+                        model_output = model(model_input)
+                    else:
+                        model_output, valid_hidden = model(
+                            model_input, valid_hidden)
+
+                    model_output.update(model.sample_output(
+                        model_output, stochastic))
+                    model_input = model.propagate_input(
+                        model_input, model_output)
+                    model_output.update(model_input)
+
+                    # Add to the list for each item
+                    for k, v in model_output.items():
+                        # Dims of each element are (1, person, feature)
+                        outputs_this_step[k].append(v)
+
+                for k, v in outputs_this_step.items():
+                    # Dims of one step (1, person_valid, pred_frame, feature)
+                    one_step = torch.stack(v, dim=2)
+                    # Dims of one_step_full (1, person_all, pred_frame, feature)
+                    one_step_full = one_step.new_full(
+                        (1, num_people) + one_step.shape[2:],
+                        float('nan'))
+                    one_step_full[0, valid_persons, ...] = one_step
+                    if k in outputs_this_sequence:
+                        outputs_this_sequence[k].append(one_step_full)
+                    else:
+                        outputs_this_sequence[k] = [one_step_full]
+                        #TODO this needs to be updated, 10hz vs robot 1hz hence
+                        #using 10?? but would need to be reflected in ground
+                        #truths
+                    if k == 'position' and i < seq_len -1:
+                        for s in range(num_agents):
+                            #print('pos_seq for agent s original', pos_seq[i][s][0], ',\
+                            #',pos_seq[i][s][1])
+                            pos_seq[i+1][s] =\
+                            one_step_full[0][s][0][0] #or 1??
+                           # for it in range(i, seq_len-1):
+                           #     pos_seq[it+1][s] =\
+                           #     one_step_full[0][s][0][it+1]
+                            #print('next pos_seq for agent s', pos_seq[i+1][s][0], ',\
+                            #',pos_seq[i][s][1])
+                        
+            output_frame += 1
+        #returns to prepare input for next seq
+
+        for k, v in outputs_this_sequence.items():
+            # Dims of seq_output items are (frame, person, pred_frame, feature)
+            seq_output = torch.cat(v, dim=0)
+            seq_output_full = seq_output.new_full(
+                (output_length,) + seq_output.shape[1:], float('nan'))
+            seq_output_full[valid_frames, ...] = seq_output
+            results[-1][k] = seq_output_full
+
+    return results
+
+
+if __name__ == '__main__':
+    main()

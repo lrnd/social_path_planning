@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+import torch
+from lstm_motion_model import models, datasets
+import matplotlib.pyplot as plt
+
+
+def main():
+    plt.ion()
+    config = {
+        'input_grid_radius': 2.0,
+        'input_grid_resolution': 2,
+    }
+    model = models.SimpleSocialModel(config)
+    dataset = datasets.SocialDataset(
+        ['/home/alex/data/20181105_simulated_data/validate/'
+         '2018-11-05-13-36-25_5.csv'])
+    for sequence in dataset:
+        h = plt.imshow(torch.zeros(model.input_grid_resolution,
+            model.input_grid_resolution).numpy(),
+            vmin=0.0, vmax=1.0)
+        for i in range(1, len(sequence)):
+            input = model.prepare_input(sequence, i, i + 1)
+            h.set_data(input[1][0, 0].view(model.input_grid_resolution,
+                                     model.input_grid_resolution).numpy())
+            plt.show()
+            plt.pause(0.05)
+
+
+if __name__ == '__main__':
+    main()

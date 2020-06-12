@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+from __future__ import print_function, division
+import argparse
+import numpy as np
+import torch
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('predictions', help='Pickle file containing '
+                        'pre-computed predictions',
+                        default='results.pkl', nargs='+')
+    parser.add_argument('-p', '--plot', help='Box plot of errors',
+                        action='store_true')
+    parser.add_argument('-l', '--labels', help='Space separated list of labels'
+                        ' for each result file',
+                        nargs='*')
+    args = parser.parse_args()
+
+    if args.plot:
+        from matplotlib import pyplot as plt
+
+    boxplot_data = []
+    for filename in args.predictions:
+        with open(filename, 'rb') as f:
+            predictions = torch.load(f, map_location='cpu')
+            if isinstance(predictions, tuple) and len(predictions) == 2:
+                predictions, _ = predictions
+
+        pooled_errors = None
+        for sequence in predictions:
+            expected_keys = ['true_position', 'position']
+            if not all([key in sequence.keys() for key in expected_keys]):
+                raise KeyError(
+                    'Need \'true_positions\' and \'positions\' to be'
+                    ' present in results file')
+
+            # Chop the first two elements off the true path and last element
+            # off predicted
+            # One from true to obtain the first displacement
+            # One from front of true and back of predictions because
+            # the first prediction refers to the time step
+            # after the first displacement observation
+            true_positions = sequence['true_position'].cpu().numpy()
+            predicted_positions = sequence['position'].cpu().numpy()
+
+            # Check that the critical dimensions match
+            assert true_positions.shape[0:2] == predicted_positions.shape[0:2]
+
+            # Handle trajectory predictions by squeezing out the recursive
+            # inference dimension
+            if (len(predicted_positions.shape) == 5
+                    and predicted_positions.shape[2] == 1):
+                predicted_positions = predicted_positions.squeeze(2)
+
+            assert true_positions.shape[2] == predicted_positions.shape[3]
+            num_frames, num_people, pred_length, dims = \
+                predicted_positions.shape
+
+            errors = np.full((num_frames, num_people, pred_length), np.nan)
+            for idx, pred_sequence in enumerate(predicted_positions):
+                # Avoid computing errors past the end of the ground truth
+                if idx + pred_length + 1 > num_frames:
+                    pred_length = num_frames - idx - 1
+
+                true_sequence = true_positions[idx + 1:idx + pred_length + 1, :, :].transpose((1, 0, 2))
+                errors[idx, :, :pred_length] = np.linalg.norm(
+                    pred_sequence[:, :pred_length, :] - true_sequence, axis=2)
+            errors = errors.reshape((-1, errors.shape[-1]))
+
+            if pooled_errors is None:
+                pooled_errors = errors
+            else:
+                pooled_errors = np.concatenate((pooled_errors, errors))
+            
+        mean_err_frame = np.nanmean(pooled_errors, axis=(0))
+        std_err_frame = np.nanstd(pooled_errors, axis=(0))
+        mean_error = mean_err_frame.mean()
+        print('Mean Err: {}  All frames: {}'.format(mean_err_frame, mean_error))
+        print('Std Dev Err: {}'.format(std_err_frame))
+        pooled_errors = pooled_errors.T
+        boxplot_data.append([data[~np.isnan(data)] for data in pooled_errors])
+
+    if args.plot:
+        num_pred_frames = min([len(x) for x in boxplot_data])
+        if len(boxplot_data) > 1:
+            boxplot_data = [r for f in zip(*boxplot_data) for r in f]
+        else:
+            boxplot_data = boxplot_data[0]
+        if args.labels is None or len(args.labels) != len(args.predictions):
+            args.labels = args.predictions
+
+        rand_colors = [np.random.sample(3) for _ in args.predictions]
+        colors = [color for _ in range(num_pred_frames) for color in rand_colors]
+        labels = ['{} {}'.format(label, idx+1) for idx in range(num_pred_frames) for label in args.labels]
+        plot = plt.boxplot(boxplot_data, labels=labels, whis=[5, 95], sym='',
+                           vert=False, patch_artist=True)
+        for box, color in zip(plot['boxes'], colors):
+            box.set_facecolor(color)
+        plt.ylim([0, plt.gca().get_ylim()[1]])
+        plt.show()
+
+
+if __name__ == '__main__':
+    main()

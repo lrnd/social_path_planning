@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/sean/PycharmProjects/human-motion-rnn/lstm_motion_model/build/devel/setup.sh

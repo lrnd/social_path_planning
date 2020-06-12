@@ -1,0 +1,80 @@
+digraph simple {
+    layout=dot;
+    /*ranksep=0.2;*/
+    node [style=filled, fontname="sans serif", fontsize=12];
+    edge [fontname="sans serif", fontsize=10, labelfontsize=10, labelangle=0, arrowsize=0.7];
+
+    { // MLP Nodes
+        node [shape="record", fillcolor="0.3,0.5,1.0"]
+        //rnn_embed [label="{rnn_embed|MLP [1x?]|LeReLU}"]
+        //rtog_embed [label="{rtog_embed|MLP [1x?]|LeReLU}"]
+        regression [label="{MLP [?x?]|LeReLU}"]
+    }
+
+    { // Linear Nodes
+        node [shape=box, fillcolor="0.5,0.5,1.0"]
+        rtog [label="rtog\nLinear"]
+    }
+
+    { // LSTM Nodes
+        node [shape=box, fillcolor="0.2,0.5,1.0"]
+        rnn [label="LSTM [?x?]"]
+        //rtog_rnn [label="LSTM [?x?]"]
+    }
+
+    { // Inputs
+        node [shape=plaintext, fillcolor="none",  width=0, height=0];
+        rank=min;
+        displacement [label="V"];
+        position [label="X"];
+        Gj [label="Gj"]
+        h_prev [label="H(t-1)"];
+        //rtog_h_prev [label="H(t-1)"];
+    }
+    { // Outputs
+        node [shape=plaintext, fillcolor="none",  width=0, height=0];
+        rank=max
+        output [label="V pred"];
+        Gi
+        h [label="H"];
+        //rtog_h [label="H"];
+    }
+
+    { // Operations
+        node [shape=oval, fillcolor="0.9,0.5,1.0", width=0.2, height=0.2];
+        sum;
+        logsoftmax;
+        to_global;
+        to_local;
+    }
+
+    // Edges
+    //displacement -> rnn_embed;
+    //rnn_embed -> rnn;
+    displacement -> rnn;
+
+    //displacement -> rtog_embed;
+    //rtog_embed -> rtog_rnn;
+
+    //rtog_rnn -> rtog;
+    rnn -> rtog;
+    rtog -> logsoftmax;
+    position -> to_global;
+    logsoftmax -> to_global;
+    to_global -> Gi;
+
+    Gi -> Gj;
+
+    Gj -> sum;
+    Gj -> sum;
+    Gj -> sum;
+
+    position -> to_local;
+    sum -> to_local;
+    to_local -> regression;
+    rnn -> regression;
+    regression -> output
+
+    h_prev -> rnn -> h;
+    //rtog_h_prev -> rtog_rnn -> rtog_h;
+}

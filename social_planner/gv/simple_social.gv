@@ -1,0 +1,68 @@
+digraph simple {
+    ranksep=0.2;
+    fontname="sans serif";
+    node [shape=box,style=filled,fontname="sans serif"];
+    edge [fontname="sans serif", labelfontsize=12, arrowsize=0.7];
+
+    { // MLP Nodes
+        node [shape=record, fillcolor="0.3,0.5,1.0"]
+        input_grid_mlp [label="{input_grid_mlp|MLP 2x128|LeReLU}"]
+        input_mlp [label="{input_mlp|MLP 2x64|LeReLU}"]
+    }
+
+    { // Linear Nodes
+        node [shape=record, fillcolor="0.5,0.5,1.0"]
+        output_layer [label="{output_layer|Linear}"]
+    }
+
+    { // LSTM Nodes
+        node [shape=box, fillcolor="0.9,0.5,1.0"]
+        rnn [label="LSTM 2x128"]
+    }
+    
+    { // Activations
+        node [fillcolor="0,0.5,1.0", shape="oval", width=0.2, height=0.2]
+        grid
+        diff
+    }
+
+    // Tensors
+    {
+        node [shape=plaintext, fillcolor="none"];
+        prepare_input [label="prepare_input"]
+        position_i [label="Xi"];
+        position_j [label="Xj"];
+        displacement [label="Vi"];
+        local_grid [label="Gi"];
+        output [label="V pred"]
+        h_prev [label="H(t-1)"]
+        h [label="H"]
+    }
+
+    // Edges
+    {
+        rank=same
+        h_prev -> rnn;
+        rnn -> h;
+    }
+    subgraph cluster_0 {
+        //style=invis;
+        rank=same;
+        prepare_input
+        diff
+        grid
+    }
+    
+    position_i -> grid;
+    position_j -> grid;
+    position_j -> grid;
+    position_j -> grid;
+    grid -> local_grid;
+    position_i -> diff -> displacement;
+    local_grid -> input_grid_mlp [label="  256"];
+    displacement -> input_mlp [label="  2"];
+    input_mlp -> rnn [label="\n  64"]
+    input_grid_mlp -> rnn [label="\n  128"]
+    rnn -> output_layer [label="  128"]
+    output_layer -> output [label="  2"]
+}

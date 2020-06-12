@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+from __future__ import print_function, division
+
+import os
+import numpy as np
+from argparse import ArgumentParser
+from lstm_motion_model.pedestrian_sequence import SparseCrowdSequence, DenseCrowdSequence
+from matplotlib import pyplot as plt
+
+def main():
+    args = parse_arguments()
+    for input_path, output_path in zip(args.input_path, args.output_path):
+        sparse_crowd_seq = SparseCrowdSequence.load(input_path)
+        dense_crowd_seq = sparse_crowd_seq.to_dense_crowd_sequence(args.dt)
+        if args.crop:
+            dense_crowd_seq.crop_and_split(args.lower_bounds, args.upper_bounds)
+        if args.plot:
+            dense_crowd_seq.plot()
+            seq = dense_crowd_seq[:]
+            plt.imshow(np.all(np.isfinite(seq), axis=-1), aspect='auto')
+            plt.show()
+        dense_crowd_seq.save(output_path)
+
+
+def parse_arguments():
+    parser = ArgumentParser()
+    parser.add_argument('input_path', help='Path to imported dataset',
+                        nargs='+')
+    parser.add_argument('-o', '--output_path',
+                        help='Path to save prepared dataset',
+                        nargs='+')
+    parser.add_argument('-p', '--plot', help='Plot prepared dataset',
+                        action='store_true')
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--hz', help='Framerate to use converting to dense',
+                       type=float)
+    group.add_argument('--dt', help='Frame period to use converting to dense',
+                       type=float)
+
+    parser.add_argument('--crop',
+                        help='Crop pedestrian tracks to a field of view and '
+                        'split tracks when they leave and reenter the fov. '
+                        'Enter bounds separated by spaces: min_x min_y max_x max_y',
+                        nargs=4, type=float)
+
+    args = parser.parse_args()
+
+    if args.crop:
+        args.lower_bounds = args.crop[0:2]
+        args.upper_bounds = args.crop[2:4]
+
+    if args.hz:
+        args.dt = 1.0 / args.hz
+
+    if args.output_path:
+        if len(args.input_path) != len(args.output_path):
+            print('Number of input and output paths must match')
+        args.output_path = [os.path.splitext(path)[0] + '.dense' for path in args.output_path]
+    else:
+        args.output_path = [os.path.splitext(path)[0] + '.dense' for path in args.input_path]
+
+    return args
+
+
+if __name__ == "__main__":
+    main()

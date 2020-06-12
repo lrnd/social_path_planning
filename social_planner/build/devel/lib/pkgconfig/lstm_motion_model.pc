@@ -1,0 +1,8 @@
+prefix=/home/sean/PycharmProjects/human-motion-rnn/lstm_motion_model/build/devel
+
+Name: lstm_motion_model
+Description: Description of lstm_motion_model
+Version: 0.0.0
+Cflags: -I/home/sean/PycharmProjects/human-motion-rnn/lstm_motion_model/build/devel/include
+Libs: -L${prefix}/lib 
+Requires: message_runtime

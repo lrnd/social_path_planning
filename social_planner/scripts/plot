@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+
+from __future__ import absolute_import, division, print_function
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import pickle
+from lstm_motion_model import datasets, plots, models
+import json
+import torch
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_file', help='File to load for plotting')
+    # parser.add_argument('-g', '--grid', help='Draw dataset as grids',
+                        # action='store_true')
+    # parser.add_argument('-s', '--sum', help='Sum grids',
+                        # action='store_true')
+    parser.add_argument('-l', '--sequence-length', type=int, default=None,
+                        help='Break dataset in sequences of this length')
+    parser.add_argument('-t', '--period', default=(1000 // 15),
+                        help='Period of time in ms to wait between frames')
+    parser.add_argument('-c', '--config',
+                        help='Load a model config to plot model inputs or '
+                        'ground truth for a dataset')
+    parser.add_argument('-i', '--input', action='store_true',
+                        help='Plot data as input into model')
+    parser.add_argument('-g', '--ground-truth', action='store_true',
+                        help='Plot data as ground truth target for model')
+    parser.add_argument('-m', '--mode', type=str, default=None,
+                        help='Plot data with model in given mode')
+    args = parser.parse_args()
+
+    if args.input or args.ground_truth:
+        if args.config:
+            plot_using_model(args.input_file, args.config,
+                             sequence_length=args.sequence_length,
+                             plot_input=args.input,
+                             plot_gt=args.ground_truth,
+                             mode=args.mode)
+        else:
+            print('When using the --input or --ground-truth option a model '
+                  'config must be provided using the --config option')
+    else:
+        plot_file(args.input_file, args.period)
+
+
+def plot_using_model(input_file, config_file, sequence_length=None, plot_input=False, plot_gt=False, mode=None):
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+    dataset = datasets.CrowdSequenceDataset(
+        input_file, sequence_length, device=None, transform=None)
+    model = models.instantiate_model(config['model_type'], config[
+        'model_args'], None)
+    if mode:
+        model.mode(mode)
+
+    for sequence in dataset:
+        if plot_input:
+            input = model.prepare_input(sequence, start=1)
+            for plot in plots.create_plot_from_dict(input):
+                plot.draw()
+        if plot_gt:
+            target = model.prepare_target(sequence, start=1)
+            for plot in plots.create_plot_from_dict(target):
+                plot.draw()
+
+
+def plot_file(filename, plot_interval):
+    plot_data = torch.load(filename, map_location=torch.device('cpu'))
+
+    try:
+        plot_data.plot()
+    except AttributeError as e:
+        print('Loaded object does not support plot() method')
+        # Result format is tuple (predictions, config)
+        if isinstance(plot_data, tuple) and len(plot_data) == 2:
+            print('Found 2 element tuple, assumed to be (predictions, config)')
+            plot_data, _ = plot_data
+            
+        # Main result format is list of dicts
+        if isinstance(plot_data, list):
+            print('Attempting to plot predictions based on dict keys')
+            for result_data in plot_data:
+                for plot in plots.create_plot_from_dict(result_data):
+                    plot.draw()
+        else:
+            print('Could not figure out how to plot this file')
+
+
+# def plot_social_dataset(dataset):
+    # for sequence in dataset:
+        # num_people = sequence.shape[1]
+        # for i in range(num_people):
+            # x = sequence[:, i, 0].squeeze().numpy()
+            # y = sequence[:, i, 1].squeeze().numpy()
+            # plt.plot(x, y)
+        # plt.axis('equal')
+        # plt.show()
+
+
+# def plot_grids(dataset, period):
+    # grid_length = 6.0  # m
+    # resolution = 24
+    # frame_offsets = [2, 4, 8, 16, 32]
+    # for sequence in dataset:
+        # num_frames, num_people, dims = sequence.shape
+        # indicies = datasets.pos_seq_to_relative_indicies(
+            # sequence, start=0, stop=None, grid_length=grid_length,
+            # grid_resolution=resolution, frame_offsets=frame_offsets)
+        # grids = datasets.index_to_grid(
+            # indicies, grid_resolution=resolution)
+        # fig, axes = plt.subplots(3, 4)
+        # plots = []
+        # for ax in axes.flatten():
+            # plots.append(
+                # ax.imshow(np.zeros((resolution, resolution)),
+                # cmap='gray', interpolation='gaussian', vmin=-1.0))
+            # ax.set_xticks([])
+            # ax.set_yticks([])
+
+        # def draw(frame, plots):
+            # for person in range(min(num_people, len(plots))):
+                # plots[person].set_data(-frame[person].sum(dim=0))
+            # return plots
+
+        # ani = animation.FuncAnimation(
+            # fig, draw, grids, fargs=(plots,), interval=period)
+        # plt.show()
+        # plt.close()
+
+
+if __name__ == '__main__':
+    main()

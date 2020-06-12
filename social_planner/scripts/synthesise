@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+from __future__ import print_function, division
+
+import argparse
+import os
+import numpy as np
+
+
+def main():
+    args = parse_arguments()
+    keypoints = generate_collision_keypoints()
+    output_array = keypoints_to_array(keypoints)
+    write_output_array_to_file(output_array, args.output_csv)
+
+
+def generate_collision_keypoints():
+    # Hard code simple collision trajectories
+    # TODO: Devise input system rather than hard code
+    frame_rate = 6.0  # Hz
+    speed = 1.4  # m/s
+    dist = 10.0  # m
+    start_frame = 0
+    end_frame = start_frame + int(frame_rate * dist / speed)
+    keypoints = []
+    # Person 0 walks left to right
+    keypoints.append([
+        {'frame': start_frame, 'pos': [-dist / 2, 1.0]},
+        {'frame': end_frame, 'pos': [dist / 2, 1.0]}])
+    # Person 1 walks right to left
+    keypoints.append([
+        {'frame': start_frame, 'pos': [dist / 2, -1.0]},
+        {'frame': end_frame, 'pos': [-dist / 2, -1.0]}])
+    return keypoints
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('output_csv',
+                        help='File to write. Will append .csv if not present')
+    args = parser.parse_args()
+    filename, _ = os.path.splitext(args.output_csv)
+    args.output_csv = filename + '.csv' 
+    return args
+
+
+def keypoints_to_array(keypoints):
+    person_data = []
+    for pid, person in enumerate(keypoints):
+        key_frames = [p['frame'] for p in person]
+        key_x = [p['pos'][0] for p in person]
+        key_y = [p['pos'][1] for p in person]
+        frames = range(key_frames[0], key_frames[-1])
+        xs = np.interp(frames, key_frames, key_x)
+        ys = np.interp(frames, key_frames, key_y)
+        person_data.append([(f, pid, x, y) for f, x, y in zip(frames, xs, ys)])
+
+    output_array = np.array(
+        [p for frame in zip(*person_data) for p in frame]).transpose()
+    return output_array
+
+
+def write_output_array_to_file(output_array, filename):
+    with open(filename, 'w') as f:
+        np.savetxt(f, output_array[0:2, :], fmt='%d', delimiter=',')
+        np.savetxt(f, output_array[2:4, :], fmt='%.6f', delimiter=',')
+
+
+if __name__ == '__main__':
+    main()

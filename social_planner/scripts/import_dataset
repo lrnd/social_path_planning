@@ -1,0 +1,284 @@
+#!/usr/bin/env python
+from __future__ import print_function, division
+
+import numpy as np
+from argparse import ArgumentParser
+from collections import OrderedDict
+import lstm_motion_model.pedestrian_sequence as ps
+import os
+try:
+    import rosbag
+    import rospy.rostime as rostime
+    from pedsim_msgs.msg import TrackedPersons
+except ImportError as e:
+    print(e)
+    print('Importing of ros bags is DISABLED\n')
+
+
+def parse_arguments():
+    parser = ArgumentParser()
+    # subparsers = parser.add_subparsers(title='import_type', required=True)
+    subparsers = parser.add_subparsers(title='import_type', dest='import-type')
+    subparsers.required = True
+
+    # Arguments common to all import formats
+    common_parser = ArgumentParser(add_help=False)
+    common_parser.add_argument(
+        'input_path', help='Path of file to import', nargs='+')
+    common_parser.add_argument(
+        '-o', '--output-path',
+        help='Filename of file to write imported data to', nargs='+')
+    common_parser.add_argument('-p', '--plot',
+                        help='Plot the imported pedestrian sequence',
+                        action='store_true')
+
+    optitrack_parser = subparsers.add_parser('optitrack', parents=[common_parser])
+    setup_optitrack_parser(optitrack_parser)
+
+    ewap_parser = subparsers.add_parser('ewap', parents=[common_parser])
+    setup_ewap_parser(ewap_parser)
+
+    sgan_parser = subparsers.add_parser('sgan', parents=[common_parser])
+    setup_ewap_parser(sgan_parser, sgan=True)
+
+    bag_parser = subparsers.add_parser('bag', parents=[common_parser])
+    setup_bag_parser(bag_parser)
+
+    args = parser.parse_args()
+
+    if args.output_path:
+        if len(args.input_path) != len(args.output_path):
+            print('Number of input and output paths must match')
+        args.output_path = [os.path.splitext(path)[0] + '.sparse' for path in args.output_path]
+    else:
+        args.output_path = [os.path.splitext(path)[0] + '.sparse' for path in args.input_path]
+
+    return args
+
+def setup_optitrack_parser(parser):
+    parser.set_defaults(import_data=import_optitrack)
+    parser.add_argument('-i', '--info',
+                        help='List metadata of the file',
+                        action='store_true')
+    parser.add_argument('-l', '--list',
+                        help='List all rigid bodies in the file',
+                        action='store_true')
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-a', '--all',
+                       help='Read all rigid bodies from file '
+                       '(default behaviour without -i, -l, -w, or -b)',
+                       action='store_true')
+    group.add_argument('-w', '--whitelist',
+                       help='Read only listed rigid bodies from file',
+                       nargs='+', metavar='RIGID_BODY')
+    group.add_argument('-b', '--blacklist',
+                       help='Read all but listed rigid bodies from file',
+                       nargs='+', metavar='RIGID_BODY')
+    parser.add_argument('--ignore-version',
+                        help='Ignore the optitrack version check',
+                        action='store_true')
+
+def import_optitrack(input_path, args):
+    # Default to all if no args other options are given
+    if not (args.whitelist or args.blacklist or args.all or args.info
+            or args.list):
+        args.all = True
+
+    # Load data from csv
+    with open(input_path, 'r') as f:
+        # Load the metadata row from the file
+        file_header = np.genfromtxt(f, delimiter=',', dtype=str, max_rows=1)
+        metadata = OrderedDict((k, v) for k, v in zip(file_header[::2], file_header[1::2]))
+
+        # Optionally print the metadata
+        if args.info:
+            print('=== Metadata for {} ==='.format(input_path))
+            print('\n'.join(['{}: {}'.format(k, v) for k, v in metadata.items()]))
+
+        # Optionally check the optitrack csv version
+        if not args.ignore_version and ('Format Version' not in metadata or metadata['Format Version'] != '1.2'):
+            raise NotImplementedError(
+                'Importing this version of Optitrack Motive CSV has not been '
+                'implemented, use --ignore-version flag to skip this check '
+                'and proceed at your own risk')
+
+        # Read the column headers from the csv file
+        column_headers = np.genfromtxt(f, delimiter=',', dtype=str, skip_header=1, max_rows=5)
+
+        # List available rigid bodies
+        rigid_body_cols = column_headers[0, :] == 'Rigid Body'
+        body_names = column_headers[1, :]
+        rigid_body_names = body_names[rigid_body_cols]
+        unique_names = np.unique(rigid_body_names)
+        if args.list:
+            print('=== Rigid bodies in {} ==='.format(input_path))
+            print('\n'.join(unique_names))
+
+        # Select which bodies to keep
+        selected_body_cols = np.zeros_like(rigid_body_cols)
+        if args.all:
+            selected_body_cols = rigid_body_cols
+        elif args.whitelist:
+            selected_body_cols = np.logical_and(
+                [name in args.whitelist for name in body_names],
+                rigid_body_cols)
+        elif args.blacklist:
+            selected_body_cols = np.logical_and(
+                [name not in args.blacklist for name in body_names],
+                rigid_body_cols)
+
+        if not any(selected_body_cols):
+            return None
+
+        print('== Loading following rigid bodies from {} ==='.format(
+            input_path))
+        selected_names = np.unique(body_names[selected_body_cols])
+        print('\n'.join(selected_names))
+
+        # Select which fields to read
+        field_names = column_headers[3, :]
+        # TODO: Make field selection configurable from CLI
+        selected_fields = ['Position']
+        selected_field_cols = [field in selected_fields for field in field_names]
+
+        # Select which axes to read
+        axis_names = column_headers[4, :]
+        # TODO: Make axis selection configurable per field from CLI
+        selected_axes = ['X', 'Z']
+        selected_axis_cols = [axis in selected_axes for axis in axis_names]
+
+        # Take intersection of selections
+        selected_cols = np.logical_and.reduce((selected_body_cols,
+                                              selected_field_cols,
+                                              selected_axis_cols))
+
+        # Read selected columns + frames and time, then close file (by ending 'with open')
+        cols_to_read = selected_cols.copy()
+        cols_to_read[0:2] = True
+        csv_data = np.genfromtxt(f, delimiter=',', usecols=cols_to_read.nonzero()[0])
+
+    # Crop column headers to only those read from file
+    column_headers = column_headers[:, selected_cols]
+
+    frames = csv_data[:, 0]
+    time = csv_data[:, 1]
+    bodies = column_headers[1, :]
+    fields = column_headers[3, :]
+    axes = column_headers[4, :]
+    data = csv_data[:, 2:]
+
+    persons = []
+    for idx, body in enumerate(np.unique(bodies)):
+        is_body = bodies == body
+        is_field = fields == 'Position'
+        states = data[:, np.logical_and(is_body, is_field)]
+        is_finite = np.all(np.isfinite(states), axis=-1)
+        if any(is_finite):
+            persons.append(ps.SparsePersonSequence(
+                person_id=idx,
+                timestamps=time[is_finite],
+                states=states[is_finite]))
+        else:
+            print('Skip body {} with no data'.format(body))
+
+    return ps.SparseCrowdSequence(persons)
+
+def setup_bag_parser(parser):
+    parser.set_defaults(import_data=import_bag)
+    parser.add_argument('-s', '--start_time', type=float, default=0.0,
+                        help='Start of time window (in seconds from start of '
+                        'bag) to include in output')
+    parser.add_argument('-u', '--duration', type=float,
+                        help='Length of time window (in seconds) to include in csv')
+    parser.add_argument('--use-header-timestamps',
+                        help='Pull time from header', action='store_true')
+
+
+def import_bag(input_path, args):
+    print('Loading bag file: ' + input_path)
+    input_bag = rosbag.Bag(input_path)
+
+    start_time = input_bag.get_start_time() + args.start_time
+
+    if args.duration:
+        end_time = start_time + args.duration
+    else:
+        end_time = input_bag.get_end_time()
+
+    persons = {}
+    print('Copying messages')
+    for topic, msg, time in input_bag.read_messages(
+            topics=['/pedsim_visualizer/tracked_persons'],
+            start_time=rostime.Time.from_sec(start_time),
+            end_time=rostime.Time.from_sec(end_time)):
+
+        if args.use_header_timestamps:
+            timestamp = msg.header.stamp.to_sec()
+        else:
+            timestamp = time.to_sec()
+
+        for track in msg.tracks:
+            state = [track.pose.pose.position.x, track.pose.pose.position.y]
+            if track.track_id in persons:
+                persons[track.track_id]['timestamps'].append(timestamp)
+                persons[track.track_id]['states'].append(state)
+            else:
+                persons[track.track_id] = {
+                    'timestamps': [timestamp],
+                    'states': [state]
+                }
+
+    input_bag.close()
+    return ps.SparseCrowdSequence(
+        [ps.SparsePersonSequence(id, p['timestamps'], p['states'])
+        for id, p in persons.items()])
+
+
+def setup_ewap_parser(parser, sgan=False):
+    import_func = lambda path, args: import_ewap(path, args, sgan=sgan)
+    parser.set_defaults(import_data=import_func)
+    parser.add_argument('--hz', help='Frame rate of observation data',
+                        type=float, required=True)
+
+
+def import_ewap(input_path, args, sgan=False):
+    args.period = 1.0 / args.hz
+
+    # Load data from csv
+    with open(input_path, 'r') as f:
+        raw_data = np.genfromtxt(f)
+
+    frames = raw_data[:, 0] - raw_data[0, 0]
+    person_ids = raw_data[:, 1]
+    if sgan:
+        pos = raw_data[:, [2, 3]]
+    else:
+        pos = raw_data[:, [2, 4]]
+
+    times = frames * args.period
+
+    persons = []
+    for person_id in np.unique(person_ids):
+        is_person = person_ids == person_id
+        persons.append(ps.SparsePersonSequence(
+            person_id=person_id,
+            timestamps=times[is_person],
+            states=pos[is_person, 0:2]))
+
+    return ps.SparseCrowdSequence(persons)
+
+
+def main():
+    args = parse_arguments()
+    for input_path, output_path in zip(args.input_path, args.output_path):
+        sparse_crowd_seq = args.import_data(input_path, args)
+        if sparse_crowd_seq is None:
+            exit()
+        if args.plot:
+            sparse_crowd_seq.plot()
+        sparse_crowd_seq.save(output_path)
+
+
+if __name__ == '__main__':
+    main()

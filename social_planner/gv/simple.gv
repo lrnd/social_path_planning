@@ -1,0 +1,33 @@
+digraph simple {
+    ranksep=0.2
+    node [shape=box,style=filled,fontname="sans serif"];
+    edge [fontname="sans serif", labelfontsize=12, labelangle=0];
+
+    // FC Nodes
+    node [fillcolor="0.5,0.5,1.0"]
+    out1 [label="FC"]
+    
+    node [fillcolor="0.3,0.5,1.0"]
+    mlp [label="MLP\n2x64\nLeReLU"]
+
+    // LSTM Nodes
+    node [fillcolor="0.2,0.5,1.0"]
+    lstm [label="LSTM\n2x64"]
+
+    // Tensors
+    node [shape=plaintext, fillcolor="none",  width=0, height=0];
+    input [label="V"]
+    output [label="V pred"]
+    h_prev [label="H(t-1)"]
+    h [label="H"]
+
+    // Edges
+    subgraph {
+        rank=same;
+        h_prev -> lstm -> h;
+    }
+    input -> mlp [label="  2"]
+    mlp -> lstm [label="  64"]
+    lstm -> out1 [label="  64"]
+    out1 -> output [label="  2"]
+}

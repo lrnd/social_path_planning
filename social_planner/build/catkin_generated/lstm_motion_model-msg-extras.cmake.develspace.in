@@ -1,0 +1,2 @@
+set(lstm_motion_model_MESSAGE_FILES "/home/sean/PycharmProjects/human-motion-rnn/lstm_motion_model/msg/State.msg;/home/sean/PycharmProjects/human-motion-rnn/lstm_motion_model/msg/ModelManagement.msg")
+set(lstm_motion_model_SERVICE_FILES "/home/sean/PycharmProjects/human-motion-rnn/lstm_motion_model/srv/PredictState.srv;/home/sean/PycharmProjects/human-motion-rnn/lstm_motion_model/srv/ManageModels.srv")

@@ -1,0 +1,318 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+APGModel	src/lstm_motion_model/models/__init__.py	/^class APGModel(RecurrentPedestrianMotionModel):$/;"	c
+APGTrajectoryModel	src/lstm_motion_model/models/__init__.py	/^class APGTrajectoryModel(APGModel):$/;"	c
+AnimatedResultPlot	src/lstm_motion_model/plots.py	/^class AnimatedResultPlot(ResultPlot):$/;"	c
+BivariateGaussian	src/lstm_motion_model/models/output_targeters.py	/^class BivariateGaussian(OutputTargeter):$/;"	c
+ConstantVelocityModel	src/lstm_motion_model/models/__init__.py	/^class ConstantVelocityModel(PedestrianMotionModel):$/;"	c
+CrowdSequenceDataset	src/lstm_motion_model/datasets.py	/^class CrowdSequenceDataset(Dataset):$/;"	c
+DenseCrowdSequence	src/lstm_motion_model/pedestrian_sequence.py	/^class DenseCrowdSequence(SelfPickling):$/;"	c
+DensePersonSequence	src/lstm_motion_model/pedestrian_sequence.py	/^class DensePersonSequence():$/;"	c
+Direct	src/lstm_motion_model/models/output_targeters.py	/^class Direct(OutputTargeter):$/;"	c
+GaussianPredictionPlot	src/lstm_motion_model/plots.py	/^class GaussianPredictionPlot(AnimatedResultPlot):$/;"	c
+GridPredictionPlot	src/lstm_motion_model/plots.py	/^class GridPredictionPlot(AnimatedResultPlot):$/;"	c
+Histogram	src/lstm_motion_model/models/output_targeters.py	/^class Histogram(OutputTargeter):$/;"	c
+IndividualEgoTrajectoryModel	src/lstm_motion_model/models/__init__.py	/^class IndividualEgoTrajectoryModel(RecurrentPedestrianMotionModel):$/;"	c
+LossMonitor	src/lstm_motion_model/utils.py	/^class LossMonitor(object):$/;"	c
+LstmMotionModel	scripts/lstm_motion_model	/^class LstmMotionModel:$/;"	c
+OutputTargeter	src/lstm_motion_model/models/output_targeters.py	/^class OutputTargeter(ABC):$/;"	c
+PathPredictionPlot	src/lstm_motion_model/plots.py	/^class PathPredictionPlot(AnimatedResultPlot):$/;"	c
+PedestrianMotionModel	src/lstm_motion_model/models/__init__.py	/^class PedestrianMotionModel(nn.Module):$/;"	c
+PositionToAPG	src/lstm_motion_model/models/sequence_transforms.py	/^class PositionToAPG(SequenceTransform):$/;"	c
+PositionToDisplacement	src/lstm_motion_model/models/sequence_transforms.py	/^class PositionToDisplacement(SequenceTransform):$/;"	c
+PositionToDisplacementTrajectory	src/lstm_motion_model/models/sequence_transforms.py	/^class PositionToDisplacementTrajectory(SequenceTransform):$/;"	c
+PositionToEgoDisplacement	src/lstm_motion_model/models/sequence_transforms.py	/^class PositionToEgoDisplacement(PositionToDisplacement):$/;"	c
+PositionToFutureDisplacements	src/lstm_motion_model/models/sequence_transforms.py	/^class PositionToFutureDisplacements(SequenceTransform):$/;"	c
+PositionToLocalGrid	src/lstm_motion_model/models/sequence_transforms.py	/^class PositionToLocalGrid(SequenceTransform):$/;"	c
+RecurrentPedestrianMotionModel	src/lstm_motion_model/models/__init__.py	/^class RecurrentPedestrianMotionModel(PedestrianMotionModel):$/;"	c
+ResultPlot	src/lstm_motion_model/plots.py	/^class ResultPlot:$/;"	c
+Scatter2dPlot	src/lstm_motion_model/plots.py	/^class Scatter2dPlot(ResultPlot):$/;"	c
+SelfPickling	src/lstm_motion_model/pedestrian_sequence.py	/^class SelfPickling():$/;"	c
+SequenceTransform	src/lstm_motion_model/models/sequence_transforms.py	/^class SequenceTransform(ABC):$/;"	c
+SimpleEgoModel	src/lstm_motion_model/models/__init__.py	/^class SimpleEgoModel(RecurrentPedestrianMotionModel):$/;"	c
+SimpleMotionModel	src/lstm_motion_model/models/__init__.py	/^class SimpleMotionModel(RecurrentPedestrianMotionModel):$/;"	c
+SimpleSocialModel	src/lstm_motion_model/models/__init__.py	/^class SimpleSocialModel(RecurrentPedestrianMotionModel):$/;"	c
+SocialContinuousModel	src/lstm_motion_model/models/__init__.py	/^class SocialContinuousModel(RecurrentPedestrianMotionModel):$/;"	c
+SocialDataset	src/lstm_motion_model/datasets.py	/^class SocialDataset(Dataset):$/;"	c
+SocialForcesModel	src/lstm_motion_model/models/__init__.py	/^class SocialForcesModel(PedestrianMotionModel):$/;"	c
+SparseCrowdSequence	src/lstm_motion_model/pedestrian_sequence.py	/^class SparseCrowdSequence(SelfPickling):$/;"	c
+SparsePersonSequence	src/lstm_motion_model/pedestrian_sequence.py	/^class SparsePersonSequence():$/;"	c
+TestDenseCrowdSequence	src/lstm_motion_model/test_pedestrian_sequence.py	/^class TestDenseCrowdSequence(unittest.TestCase):$/;"	c
+TestDensePersonSequence	src/lstm_motion_model/test_pedestrian_sequence.py	/^class TestDensePersonSequence(unittest.TestCase):$/;"	c
+Trainer	scripts/train	/^class Trainer:$/;"	c
+__call__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __call__(self, sequence, start=None, stop=None):$/;"	m	class:PositionToAPG	file:
+__call__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __call__(self, sequence, start=None, stop=None):$/;"	m	class:PositionToDisplacement	file:
+__call__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __call__(self, sequence, start=None, stop=None):$/;"	m	class:PositionToDisplacementTrajectory	file:
+__call__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __call__(self, sequence, start=None, stop=None):$/;"	m	class:PositionToEgoDisplacement	file:
+__call__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __call__(self, sequence, start=None, stop=None):$/;"	m	class:PositionToFutureDisplacements	file:
+__call__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __call__(self, sequence, start=None, stop=None):$/;"	m	class:PositionToLocalGrid	file:
+__call__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __call__(self, sequence, start=None, stop=None):$/;"	m	class:SequenceTransform	file:
+__getitem__	src/lstm_motion_model/datasets.py	/^    def __getitem__(self, item):$/;"	m	class:CrowdSequenceDataset	file:
+__getitem__	src/lstm_motion_model/datasets.py	/^    def __getitem__(self, item):$/;"	m	class:SocialDataset	file:
+__getitem__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __getitem__(self, item):$/;"	m	class:SparsePersonSequence	file:
+__getitem__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __getitem__(self, key):$/;"	m	class:DenseCrowdSequence	file:
+__getitem__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __getitem__(self, key):$/;"	m	class:DensePersonSequence	file:
+__init__	scripts/lstm_motion_model	/^    def __init__(self):$/;"	m	class:LstmMotionModel
+__init__	scripts/train	/^    def __init__(self):$/;"	m	class:Trainer
+__init__	src/lstm_motion_model/datasets.py	/^    def __init__(self, csv_files, sequence_length=None, device=None,$/;"	m	class:SocialDataset
+__init__	src/lstm_motion_model/datasets.py	/^    def __init__(self, file_paths, sequence_length=None, device=None,$/;"	m	class:CrowdSequenceDataset
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:APGModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:APGTrajectoryModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:ConstantVelocityModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:IndividualEgoTrajectoryModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:PedestrianMotionModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:RecurrentPedestrianMotionModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:SimpleEgoModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:SimpleMotionModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:SimpleSocialModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:SocialContinuousModel
+__init__	src/lstm_motion_model/models/__init__.py	/^    def __init__(self, config):$/;"	m	class:SocialForcesModel
+__init__	src/lstm_motion_model/models/output_targeters.py	/^    def __init__(self):$/;"	m	class:OutputTargeter
+__init__	src/lstm_motion_model/models/output_targeters.py	/^    def __init__(self, dims=2):$/;"	m	class:Direct
+__init__	src/lstm_motion_model/models/output_targeters.py	/^    def __init__(self, resolution, radius):$/;"	m	class:Histogram
+__init__	src/lstm_motion_model/models/output_targeters.py	/^    def __init__(self, sigma_max = 1.0):$/;"	m	class:BivariateGaussian
+__init__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __init__(self):$/;"	m	class:SequenceTransform
+__init__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __init__(self, angular_segments, max_range):$/;"	m	class:PositionToAPG
+__init__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __init__(self, global_radius, global_resolution,$/;"	m	class:PositionToLocalGrid
+__init__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __init__(self, offset=0, extrapolate_nans=False):$/;"	m	class:PositionToDisplacement
+__init__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __init__(self, offset=0, extrapolate_nans=False):$/;"	m	class:PositionToEgoDisplacement
+__init__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __init__(self, temporal_offsets, egocentric):$/;"	m	class:PositionToFutureDisplacements
+__init__	src/lstm_motion_model/models/sequence_transforms.py	/^    def __init__(self, trajectory_length):$/;"	m	class:PositionToDisplacementTrajectory
+__init__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __init__(self, person_id, start_frame, states):$/;"	m	class:DensePersonSequence
+__init__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __init__(self, person_id, timestamps, states):$/;"	m	class:SparsePersonSequence
+__init__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __init__(self, persons, delta_t):$/;"	m	class:DenseCrowdSequence
+__init__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __init__(self, persons=[]):$/;"	m	class:SparseCrowdSequence
+__init__	src/lstm_motion_model/plots.py	/^    def __init__(self):$/;"	m	class:AnimatedResultPlot
+__init__	src/lstm_motion_model/plots.py	/^    def __init__(self):$/;"	m	class:ResultPlot
+__init__	src/lstm_motion_model/plots.py	/^    def __init__(self, result_data):$/;"	m	class:GaussianPredictionPlot
+__init__	src/lstm_motion_model/plots.py	/^    def __init__(self, result_data):$/;"	m	class:GridPredictionPlot
+__init__	src/lstm_motion_model/plots.py	/^    def __init__(self, result_data):$/;"	m	class:PathPredictionPlot
+__init__	src/lstm_motion_model/plots.py	/^    def __init__(self, result_data):$/;"	m	class:Scatter2dPlot
+__init__	src/lstm_motion_model/utils.py	/^    def __init__(self, patience=10, threshold=1e-4):$/;"	m	class:LossMonitor
+__len__	src/lstm_motion_model/datasets.py	/^    def __len__(self):$/;"	m	class:CrowdSequenceDataset	file:
+__len__	src/lstm_motion_model/datasets.py	/^    def __len__(self):$/;"	m	class:SocialDataset	file:
+__len__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __len__(self):$/;"	m	class:DenseCrowdSequence	file:
+__len__	src/lstm_motion_model/pedestrian_sequence.py	/^    def __len__(self):$/;"	m	class:SparsePersonSequence	file:
+_apply_transforms	src/lstm_motion_model/models/__init__.py	/^    def _apply_transforms(tf_list, sequence, start, stop):$/;"	m	class:PedestrianMotionModel
+_check_dims	src/lstm_motion_model/models/output_targeters.py	/^    def _check_dims(self, x):$/;"	m	class:OutputTargeter
+_draw_animation	src/lstm_motion_model/plots.py	/^    def _draw_animation(self):$/;"	m	class:AnimatedResultPlot
+_draw_animation	src/lstm_motion_model/plots.py	/^    def _draw_animation(self):$/;"	m	class:GaussianPredictionPlot
+_draw_animation	src/lstm_motion_model/plots.py	/^    def _draw_animation(self):$/;"	m	class:GridPredictionPlot
+_draw_animation	src/lstm_motion_model/plots.py	/^    def _draw_animation(self):$/;"	m	class:PathPredictionPlot
+_expose_config_as_ro_props	src/lstm_motion_model/models/__init__.py	/^    def _expose_config_as_ro_props(self):$/;"	m	class:PedestrianMotionModel
+_grid_idx_to_2d_point	src/lstm_motion_model/models/output_targeters.py	/^    def _grid_idx_to_2d_point(self, grid_idx):$/;"	m	class:Histogram
+_increment_step	src/lstm_motion_model/models/__init__.py	/^    def _increment_step(module, input, output):$/;"	m	class:PedestrianMotionModel
+_init_lstm_hidden	src/lstm_motion_model/models/__init__.py	/^    def _init_lstm_hidden(self, num_people, layers, size, device=None):$/;"	m	class:RecurrentPedestrianMotionModel
+_play_animation	src/lstm_motion_model/plots.py	/^    def _play_animation(self):$/;"	m	class:AnimatedResultPlot
+_process_output	src/lstm_motion_model/models/__init__.py	/^    def _process_output(module, input, output):$/;"	m	class:PedestrianMotionModel
+_unflatten_2d_index	src/lstm_motion_model/models/output_targeters.py	/^    def _unflatten_2d_index(self, index):$/;"	m	class:Histogram
+_update_animation	src/lstm_motion_model/plots.py	/^    def _update_animation(self):$/;"	m	class:AnimatedResultPlot
+_update_animation	src/lstm_motion_model/plots.py	/^    def _update_animation(self, frame):$/;"	m	class:GaussianPredictionPlot
+_update_animation	src/lstm_motion_model/plots.py	/^    def _update_animation(self, frame):$/;"	m	class:GridPredictionPlot
+_update_animation	src/lstm_motion_model/plots.py	/^    def _update_animation(self, frame):$/;"	m	class:PathPredictionPlot
+_update_plot_lims	src/lstm_motion_model/plots.py	/^    def _update_plot_lims(self, sequence):$/;"	m	class:GaussianPredictionPlot
+_update_plot_lims	src/lstm_motion_model/plots.py	/^    def _update_plot_lims(self, sequence):$/;"	m	class:PathPredictionPlot
+accumulate_normalisation_data	src/lstm_motion_model/models/__init__.py	/^    def accumulate_normalisation_data(self, position_sequence,$/;"	m	class:PedestrianMotionModel
+after_length	src/lstm_motion_model/models/__init__.py	/^    def after_length(self):$/;"	m	class:PedestrianMotionModel
+after_length	src/lstm_motion_model/models/sequence_transforms.py	/^    def after_length(self):$/;"	m	class:PositionToDisplacement
+after_length	src/lstm_motion_model/models/sequence_transforms.py	/^    def after_length(self):$/;"	m	class:SequenceTransform
+angle_to_rotation_matrix	src/lstm_motion_model/utils.py	/^def angle_to_rotation_matrix(theta):$/;"	f
+args	scripts/train	/^    args = trainer.parse_args()$/;"	v	class:Trainer
+assert_all_finite	scripts/train	/^def assert_all_finite(tensors):$/;"	f
+assert_finite	src/lstm_motion_model/criterion.py	/^def assert_finite(x):$/;"	f
+before_length	src/lstm_motion_model/models/__init__.py	/^    def before_length(self):$/;"	m	class:PedestrianMotionModel
+before_length	src/lstm_motion_model/models/sequence_transforms.py	/^    def before_length(self):$/;"	m	class:PositionToDisplacement
+before_length	src/lstm_motion_model/models/sequence_transforms.py	/^    def before_length(self):$/;"	m	class:SequenceTransform
+bivariate_gaussian_loss	src/lstm_motion_model/criterion.py	/^def bivariate_gaussian_loss(params, target):$/;"	f
+c	test/scale_check	/^c = 1$/;"	v
+chop_at_gaps	scripts/ewap_chop	/^def chop_at_gaps(data, gap_thresh, input_file):$/;"	f
+chop_into_equal_chunks	scripts/ewap_chop	/^def chop_into_equal_chunks(data, num_chunks, input_file):$/;"	f
+clear_normalisation_parameters	src/lstm_motion_model/models/__init__.py	/^    def clear_normalisation_parameters(self):$/;"	m	class:PedestrianMotionModel
+compose_output	src/lstm_motion_model/models/output_targeters.py	/^    def compose_output(self, model_output):$/;"	m	class:BivariateGaussian
+compose_output	src/lstm_motion_model/models/output_targeters.py	/^    def compose_output(self, model_output):$/;"	m	class:Direct
+compose_output	src/lstm_motion_model/models/output_targeters.py	/^    def compose_output(self, model_output):$/;"	m	class:Histogram
+compose_output	src/lstm_motion_model/models/output_targeters.py	/^    def compose_output(self, model_output):$/;"	m	class:OutputTargeter
+compose_target	src/lstm_motion_model/models/output_targeters.py	/^    def compose_target(self, target):$/;"	m	class:BivariateGaussian
+compose_target	src/lstm_motion_model/models/output_targeters.py	/^    def compose_target(self, target):$/;"	m	class:Direct
+compose_target	src/lstm_motion_model/models/output_targeters.py	/^    def compose_target(self, target):$/;"	m	class:Histogram
+compose_target	src/lstm_motion_model/models/output_targeters.py	/^    def compose_target(self, target):$/;"	m	class:OutputTargeter
+compute_aggregate_metrics	scripts/train	/^    def compute_aggregate_metrics(self, true_list, pred_list):$/;"	m	class:Trainer
+compute_loss	src/lstm_motion_model/models/__init__.py	/^    def compute_loss(self, model_output, target):$/;"	m	class:PedestrianMotionModel
+compute_loss	src/lstm_motion_model/models/output_targeters.py	/^    def compute_loss(self, model_output, target):$/;"	m	class:BivariateGaussian
+compute_loss	src/lstm_motion_model/models/output_targeters.py	/^    def compute_loss(self, model_output, target):$/;"	m	class:Direct
+compute_loss	src/lstm_motion_model/models/output_targeters.py	/^    def compute_loss(self, model_output, target):$/;"	m	class:Histogram
+compute_loss	src/lstm_motion_model/models/output_targeters.py	/^    def compute_loss(self, model_output, target):$/;"	m	class:OutputTargeter
+compute_metrics	scripts/train	/^    def compute_metrics(true, pred):$/;"	m	class:Trainer
+compute_normalisation_parameters	scripts/train	/^    def compute_normalisation_parameters(self, model, dataset):$/;"	m	class:Trainer
+compute_normalisation_parameters	src/lstm_motion_model/models/__init__.py	/^    def compute_normalisation_parameters(self):$/;"	m	class:PedestrianMotionModel
+compute_social_context	src/lstm_motion_model/models/__init__.py	/^    def compute_social_context(self, position, predicted_displacements):$/;"	m	class:SocialContinuousModel
+compute_social_context_egocentric	src/lstm_motion_model/models/__init__.py	/^    def compute_social_context_egocentric(self, position, orientation, predicted_displacements):$/;"	m	class:SocialContinuousModel
+compute_social_predictions	scripts/infer	/^def compute_social_predictions(model, dataset, sample_steps, device,$/;"	f
+construct_covar_from_params	src/lstm_motion_model/utils.py	/^def construct_covar_from_params(params, min_var=1e-8):$/;"	f
+create	src/lstm_motion_model/models/output_targeters.py	/^def create(name, kwargs) -> OutputTargeter:$/;"	f
+create_mlp	src/lstm_motion_model/models/__init__.py	/^def create_mlp(dim_list, activation='leaky_relu', layer_norm=False,$/;"	f
+create_plot_from_dict	src/lstm_motion_model/plots.py	/^def create_plot_from_dict(plot_dict, config=None):$/;"	f
+crop_and_split	src/lstm_motion_model/pedestrian_sequence.py	/^    def crop_and_split(self, lower_bounds, upper_bounds):$/;"	m	class:DenseCrowdSequence
+crop_and_split	src/lstm_motion_model/pedestrian_sequence.py	/^    def crop_and_split(self, lower_bounds, upper_bounds):$/;"	m	class:DensePersonSequence
+d	setup.py	/^d = generate_distutils_setup($/;"	v
+data_transform	scripts/infer	/^    def data_transform(seq):$/;"	f	function:main
+data_transform	scripts/train	/^            def data_transform(seq):$/;"	f	function:Trainer.run
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls) -> Dict[str, any]:$/;"	m	class:PedestrianMotionModel
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls):$/;"	m	class:APGModel
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls):$/;"	m	class:APGTrajectoryModel
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls):$/;"	m	class:IndividualEgoTrajectoryModel
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls):$/;"	m	class:RecurrentPedestrianMotionModel
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls):$/;"	m	class:SimpleEgoModel
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls):$/;"	m	class:SimpleMotionModel
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls):$/;"	m	class:SimpleSocialModel
+default_config	src/lstm_motion_model/models/__init__.py	/^    def default_config(cls):$/;"	m	class:SocialContinuousModel
+detach	scripts/train	/^    def detach(cls, nested_tensors):$/;"	m	class:Trainer
+dims	src/lstm_motion_model/models/output_targeters.py	/^    def dims(self):$/;"	m	class:OutputTargeter
+draw	src/lstm_motion_model/plots.py	/^    def draw(self):$/;"	m	class:AnimatedResultPlot
+draw	src/lstm_motion_model/plots.py	/^    def draw(self):$/;"	m	class:ResultPlot
+draw	src/lstm_motion_model/plots.py	/^    def draw(self):$/;"	m	class:Scatter2dPlot
+end_time	src/lstm_motion_model/pedestrian_sequence.py	/^    def end_time(self):$/;"	m	class:SparseCrowdSequence
+end_time	src/lstm_motion_model/pedestrian_sequence.py	/^    def end_time(self):$/;"	m	class:SparsePersonSequence
+expected	src/lstm_motion_model/models/output_targeters.py	/^    def expected(self, model_output):$/;"	m	class:BivariateGaussian
+expected	src/lstm_motion_model/models/output_targeters.py	/^    def expected(self, model_output):$/;"	m	class:Direct
+expected	src/lstm_motion_model/models/output_targeters.py	/^    def expected(self, model_output):$/;"	m	class:Histogram
+expected	src/lstm_motion_model/models/output_targeters.py	/^    def expected(self, model_output):$/;"	m	class:OutputTargeter
+expected_keys	src/lstm_motion_model/plots.py	/^    expected_keys = [$/;"	v	class:GridPredictionPlot
+expected_keys	src/lstm_motion_model/plots.py	/^    expected_keys = [None]$/;"	v	class:AnimatedResultPlot
+expected_keys	src/lstm_motion_model/plots.py	/^    expected_keys = [['displacement']]$/;"	v	class:Scatter2dPlot
+expected_keys	src/lstm_motion_model/plots.py	/^    expected_keys = [['true_position', 'displacement_gaussian']]$/;"	v	class:GaussianPredictionPlot
+expected_keys	src/lstm_motion_model/plots.py	/^    expected_keys = [['true_position', 'position']]$/;"	v	class:PathPredictionPlot
+expected_keys	src/lstm_motion_model/plots.py	/^    expected_keys = [[None]]$/;"	v	class:ResultPlot
+extrapolate_nans_1d	src/lstm_motion_model/utils.py	/^def extrapolate_nans_1d(seq):$/;"	f
+extrapolate_nans_in_seq	src/lstm_motion_model/utils.py	/^def extrapolate_nans_in_seq(seq):$/;"	f
+flatten_2d_index	src/lstm_motion_model/utils.py	/^def flatten_2d_index(index, n, m=None):$/;"	f
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:APGModel
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:APGTrajectoryModel
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:ConstantVelocityModel
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:IndividualEgoTrajectoryModel
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:SimpleEgoModel
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:SimpleMotionModel
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:SimpleSocialModel
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:SocialContinuousModel
+forward	src/lstm_motion_model/models/__init__.py	/^    def forward(self, model_input, hidden=None):$/;"	m	class:SocialForcesModel
+generate_collision_keypoints	scripts/synthesise	/^def generate_collision_keypoints():$/;"	f
+get_model_dict	src/lstm_motion_model/models/__init__.py	/^def get_model_dict():$/;"	f
+get_normalisation_parameters	src/lstm_motion_model/models/__init__.py	/^    def get_normalisation_parameters(self):$/;"	m	class:PedestrianMotionModel
+glb_rtog	test/scale_check	/^glb_rtog = model.rtog_transform(lcl_rtog, offset, local_radius,$/;"	v
+global_radius	test/scale_check	/^global_radius = 16.0$/;"	v
+global_resolution	test/scale_check	/^global_resolution = 80$/;"	v
+grid_transform	src/lstm_motion_model/utils.py	/^def grid_transform(src_grid, offset, old_radius, new_radius,$/;"	f
+import_bag	scripts/import_dataset	/^def import_bag(input_path, args):$/;"	f
+import_ewap	scripts/import_dataset	/^def import_ewap(input_path, args, sgan=False):$/;"	f
+import_optitrack	scripts/import_dataset	/^def import_optitrack(input_path, args):$/;"	f
+index_to_grid	src/lstm_motion_model/utils.py	/^def index_to_grid(x, grid_resolution=10):$/;"	f
+init_hidden	src/lstm_motion_model/models/__init__.py	/^    def init_hidden(self, num_people, device=None):$/;"	m	class:RecurrentPedestrianMotionModel
+init_hidden	src/lstm_motion_model/models/__init__.py	/^    def init_hidden(self, num_people, device=torch.device('cpu')):$/;"	m	class:APGModel
+init_hidden	src/lstm_motion_model/models/__init__.py	/^    def init_hidden(self, num_people, device=torch.device('cpu')):$/;"	m	class:IndividualEgoTrajectoryModel
+init_hidden	src/lstm_motion_model/models/__init__.py	/^    def init_hidden(self, num_people, device=torch.device('cpu')):$/;"	m	class:SimpleEgoModel
+init_hidden	src/lstm_motion_model/models/__init__.py	/^    def init_hidden(self, num_people, device=torch.device('cpu')):$/;"	m	class:SimpleMotionModel
+init_hidden	src/lstm_motion_model/models/__init__.py	/^    def init_hidden(self, num_people, device=torch.device('cpu')):$/;"	m	class:SocialContinuousModel
+instantiate_model	src/lstm_motion_model/models/__init__.py	/^        PedestrianMotionModel:$/;"	f
+keypoints_to_array	scripts/synthesise	/^def keypoints_to_array(keypoints):$/;"	f
+label	src/lstm_motion_model/models/output_targeters.py	/^    label = 'direct'$/;"	v	class:Direct
+label	src/lstm_motion_model/models/output_targeters.py	/^    label = 'gaussian'$/;"	v	class:BivariateGaussian
+label	src/lstm_motion_model/models/output_targeters.py	/^    label = 'histogram'$/;"	v	class:Histogram
+label	src/lstm_motion_model/models/output_targeters.py	/^    label = None$/;"	v	class:OutputTargeter
+lcl_rtog	test/scale_check	/^lcl_rtog = lstm_motion_model.utils.point_to_grid($/;"	v
+lmm	scripts/lstm_motion_model	/^    lmm = LstmMotionModel$/;"	v	class:LstmMotionModel
+load	src/lstm_motion_model/pedestrian_sequence.py	/^    def load(cls, filepath):$/;"	m	class:SelfPickling
+local_radius	test/scale_check	/^local_radius = 4.0$/;"	v
+local_resolution	test/scale_check	/^local_resolution = 20$/;"	v
+lookup	src/lstm_motion_model/models/__init__.py	/^def lookup(model_name) -> nn.Module:$/;"	f
+main	scripts/configure	/^def main():$/;"	f
+main	scripts/evaluate	/^def main():$/;"	f
+main	scripts/ewap_chop	/^def main():$/;"	f
+main	scripts/import_dataset	/^def main():$/;"	f
+main	scripts/infer	/^def main():$/;"	f
+main	scripts/plot	/^def main():$/;"	f
+main	scripts/plot_loss	/^def main():$/;"	f
+main	scripts/prepare_dataset	/^def main():$/;"	f
+main	scripts/synthesise	/^def main():$/;"	f
+main	test/transform_test	/^def main():$/;"	f
+mode	src/lstm_motion_model/models/__init__.py	/^    def mode(self, mode):$/;"	m	class:SocialContinuousModel
+model	test/scale_check	/^model = models.SocialMotionModel()$/;"	v
+n	test/scale_check	/^n = 1$/;"	v
+normalise_input	src/lstm_motion_model/models/__init__.py	/^    def normalise_input(self, model_input):$/;"	m	class:PedestrianMotionModel
+normalise_target	src/lstm_motion_model/models/__init__.py	/^    def normalise_target(self, target):$/;"	m	class:PedestrianMotionModel
+offset	test/scale_check	/^offset = torch.tensor([[8.0, 4.0]])$/;"	v
+package_dir	setup.py	/^    package_dir={'': 'src'}$/;"	v
+packages	setup.py	/^    packages=['lstm_motion_model'],$/;"	v
+parse_args	scripts/train	/^    def parse_args():$/;"	m	class:Trainer
+parse_arguments	scripts/import_dataset	/^def parse_arguments():$/;"	f
+parse_arguments	scripts/prepare_dataset	/^def parse_arguments():$/;"	f
+parse_arguments	scripts/synthesise	/^def parse_arguments():$/;"	f
+plot	src/lstm_motion_model/pedestrian_sequence.py	/^    def plot(self):$/;"	m	class:DenseCrowdSequence
+plot	src/lstm_motion_model/pedestrian_sequence.py	/^    def plot(self):$/;"	m	class:SparseCrowdSequence
+plot_file	scripts/plot	/^def plot_file(filename, plot_interval):$/;"	f
+plot_frame_diffs	scripts/ewap_chop	/^def plot_frame_diffs(unique_frames, diffs):$/;"	f
+plot_using_model	scripts/plot	/^def plot_using_model(input_file, config_file, sequence_length=None, plot_input=False, plot_gt=False, mode=None):$/;"	f
+point_to_grid	src/lstm_motion_model/utils.py	/^def point_to_grid(x, grid_length=2.0, grid_resolution=10,$/;"	f
+point_to_index	src/lstm_motion_model/utils.py	/^def point_to_index(x, grid_length=2.0, grid_resolution=10,$/;"	f
+pos_seq_to_relative_indices	src/lstm_motion_model/utils.py	/^def pos_seq_to_relative_indices(x, start, stop, grid_radius, grid_resolution,$/;"	f
+predict	scripts/lstm_motion_model	/^    def predict(self, id, input):$/;"	m	class:LstmMotionModel
+prepare_input	src/lstm_motion_model/models/__init__.py	/^    def prepare_input(self, position_sequence, start=None, stop=None):$/;"	m	class:PedestrianMotionModel
+prepare_target	src/lstm_motion_model/models/__init__.py	/^    def prepare_target(self, position_sequence, start=None, stop=None):$/;"	m	class:PedestrianMotionModel
+propagate_input	src/lstm_motion_model/models/__init__.py	/^    def propagate_input(self, model_input, model_output):$/;"	m	class:APGModel
+propagate_input	src/lstm_motion_model/models/__init__.py	/^    def propagate_input(self, model_input, model_output):$/;"	m	class:APGTrajectoryModel
+propagate_input	src/lstm_motion_model/models/__init__.py	/^    def propagate_input(self, model_input, model_output):$/;"	m	class:IndividualEgoTrajectoryModel
+propagate_input	src/lstm_motion_model/models/__init__.py	/^    def propagate_input(self, model_input, model_output):$/;"	m	class:PedestrianMotionModel
+propagate_input	src/lstm_motion_model/models/__init__.py	/^    def propagate_input(self, model_input, model_output):$/;"	m	class:SimpleEgoModel
+random_flip_tensor	src/lstm_motion_model/utils.py	/^def random_flip_tensor(x):$/;"	f
+random_offset_tensor	src/lstm_motion_model/utils.py	/^def random_offset_tensor(x, lower=-1.0, upper=1.0):$/;"	f
+random_rotate_tensor	src/lstm_motion_model/utils.py	/^def random_rotate_tensor(x):$/;"	f
+release_normalisation_data	src/lstm_motion_model/models/__init__.py	/^    def release_normalisation_data(self):$/;"	m	class:PedestrianMotionModel
+rescale_plot	src/lstm_motion_model/plot_utils.py	/^def rescale_plot(vis, env, win):$/;"	f
+reset	src/lstm_motion_model/utils.py	/^    def reset(self):$/;"	m	class:LossMonitor
+rotate_2d	src/lstm_motion_model/utils.py	/^def rotate_2d(x, theta):$/;"	f
+rotate_2d_covariance	src/lstm_motion_model/utils.py	/^def rotate_2d_covariance(covariance, theta):$/;"	f
+run	scripts/train	/^    def run(self, args):$/;"	m	class:Trainer
+sample	src/lstm_motion_model/models/output_targeters.py	/^    def sample(self, model_output):$/;"	m	class:BivariateGaussian
+sample	src/lstm_motion_model/models/output_targeters.py	/^    def sample(self, model_output):$/;"	m	class:Direct
+sample	src/lstm_motion_model/models/output_targeters.py	/^    def sample(self, model_output):$/;"	m	class:Histogram
+sample	src/lstm_motion_model/models/output_targeters.py	/^    def sample(self, model_output):$/;"	m	class:OutputTargeter
+sample_output	src/lstm_motion_model/models/__init__.py	/^    def sample_output(self, model_output, stochastic=True):$/;"	m	class:PedestrianMotionModel
+sample_prediction_output	src/lstm_motion_model/models/__init__.py	/^    def sample_prediction_output(self, predicted, stochastic):$/;"	m	class:SocialContinuousModel
+save	src/lstm_motion_model/pedestrian_sequence.py	/^    def save(self, filename):$/;"	m	class:SelfPickling
+scale	test/scale_check	/^scale = global_radius \/ local_radius$/;"	v
+setUp	src/lstm_motion_model/test_pedestrian_sequence.py	/^    def setUp(self):$/;"	m	class:TestDenseCrowdSequence
+setUp	src/lstm_motion_model/test_pedestrian_sequence.py	/^    def setUp(self):$/;"	m	class:TestDensePersonSequence
+set_normalisation_parameters	src/lstm_motion_model/models/__init__.py	/^    def set_normalisation_parameters(self, params):$/;"	m	class:PedestrianMotionModel
+setup_bag_parser	scripts/import_dataset	/^def setup_bag_parser(parser):$/;"	f
+setup_ewap_parser	scripts/import_dataset	/^def setup_ewap_parser(parser, sgan=False):$/;"	f
+setup_optitrack_parser	scripts/import_dataset	/^def setup_optitrack_parser(parser):$/;"	f
+soc_rtog	test/scale_check	/^soc_rtog = model.rtog_transform(glb_rtog, -offset, global_radius,$/;"	v
+stalled	src/lstm_motion_model/utils.py	/^    def stalled(self):$/;"	m	class:LossMonitor
+start_frame	src/lstm_motion_model/pedestrian_sequence.py	/^    def start_frame(self):$/;"	m	class:DenseCrowdSequence
+start_time	src/lstm_motion_model/pedestrian_sequence.py	/^    def start_time(self):$/;"	m	class:SparseCrowdSequence
+start_time	src/lstm_motion_model/pedestrian_sequence.py	/^    def start_time(self):$/;"	m	class:SparsePersonSequence
+step	src/lstm_motion_model/utils.py	/^    def step(self, loss):$/;"	m	class:LossMonitor
+stop_frame	src/lstm_motion_model/pedestrian_sequence.py	/^    def stop_frame(self):$/;"	m	class:DenseCrowdSequence
+stop_frame	src/lstm_motion_model/pedestrian_sequence.py	/^    def stop_frame(self):$/;"	m	class:DensePersonSequence
+tbptt	scripts/train	/^    def tbptt(self, model, optimizer, dataset):$/;"	m	class:Trainer
+tensorboard_available	scripts/train	/^    tensorboard_available = False$/;"	v
+tensorboard_available	scripts/train	/^    tensorboard_available = True$/;"	v
+test_getitem_int_index_error	src/lstm_motion_model/test_pedestrian_sequence.py	/^    def test_getitem_int_index_error(self):$/;"	m	class:TestDensePersonSequence
+test_getitem_int_valid	src/lstm_motion_model/test_pedestrian_sequence.py	/^    def test_getitem_int_valid(self):$/;"	m	class:TestDensePersonSequence
+test_getitem_slice_all	src/lstm_motion_model/test_pedestrian_sequence.py	/^    def test_getitem_slice_all(self):$/;"	m	class:TestDenseCrowdSequence
+test_getitem_tuple_index_error	src/lstm_motion_model/test_pedestrian_sequence.py	/^    def test_getitem_tuple_index_error(self):$/;"	m	class:TestDensePersonSequence
+test_gettime_slice_invalid	src/lstm_motion_model/test_pedestrian_sequence.py	/^    def test_gettime_slice_invalid(self):$/;"	m	class:TestDenseCrowdSequence
+test_gettime_slice_valid	src/lstm_motion_model/test_pedestrian_sequence.py	/^    def test_gettime_slice_valid(self):$/;"	m	class:TestDenseCrowdSequence
+test_model	scripts/train	/^    def test_model(self, model, forward_pass, test_dataset,$/;"	m	class:Trainer
+to_dense_crowd_sequence	src/lstm_motion_model/pedestrian_sequence.py	/^    def to_dense_crowd_sequence(self, delta_t):$/;"	m	class:SparseCrowdSequence
+train_and_validate	scripts/train	/^    def train_and_validate(self, model, training_dataset,$/;"	m	class:Trainer
+trainer	scripts/train	/^    trainer = Trainer()$/;"	v	class:Trainer
+translate_and_scale_image	src/lstm_motion_model/utils.py	/^def translate_and_scale_image(src, offset, old_radius, new_radius, new_resolution):$/;"	f
+unflatten_2d_index	src/lstm_motion_model/utils.py	/^def unflatten_2d_index(index, n, m=None):$/;"	f
+unnormalise_target	src/lstm_motion_model/models/__init__.py	/^    def unnormalise_target(self, target):$/;"	m	class:PedestrianMotionModel
+vis	test/scale_check	/^vis = Visdom(port=7777)$/;"	v
+write_output_array_to_file	scripts/synthesise	/^def write_output_array_to_file(output_array, filename):$/;"	f
+x	test/scale_check	/^x = torch.tensor([[0.0, 0.0],$/;"	v

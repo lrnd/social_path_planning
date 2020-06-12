@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+import torch
+
+import lstm_motion_model.utils
+from lstm_motion_model import models, datasets
+from visdom import Visdom
+import matplotlib.pyplot as plt
+
+vis = Visdom(port=7777)
+model = models.SocialMotionModel()
+
+
+n = 1
+c = 1
+local_radius = 4.0
+global_radius = 16.0
+scale = global_radius / local_radius
+local_resolution = 20
+global_resolution = 80
+x = torch.tensor([[0.0, 0.0],
+                  [3.0, 0.0],
+                  [3.0, 2.0]])
+
+lcl_rtog = lstm_motion_model.utils.point_to_grid(
+    x, local_radius * 2, local_resolution).sum(dim=0).view(
+    n, c, local_resolution, local_resolution)
+
+# lcl_rtog = torch.rand(n, c, local_resolution, local_resolution)
+
+lcl_rtog /= lcl_rtog.sum()
+
+offset = torch.tensor([[8.0, 4.0]])
+
+glb_rtog = model.rtog_transform(lcl_rtog, offset, local_radius,
+    global_radius, global_resolution)
+
+soc_rtog = model.rtog_transform(glb_rtog, -offset, global_radius,
+    local_radius, local_resolution)
+
+
+vis.image(lcl_rtog, win='local', opts={'title': 'Local RTOG'})
+vis.image(glb_rtog, win='global', opts={'title': 'Global RTOG'})
+_, axes = plt.subplots(3, 1)
+axes[0].imshow(lcl_rtog.squeeze())
+axes[1].imshow(glb_rtog.squeeze())
+axes[2].imshow(soc_rtog.squeeze())
+print('Sum of local: {:.2f}\nSum of global: {:.2f}\nSum of social: {:.2f}'
+    .format(lcl_rtog.sum(), glb_rtog.sum(), soc_rtog.sum()))
+
+plt.show()
