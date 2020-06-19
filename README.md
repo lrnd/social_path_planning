@@ -46,9 +46,10 @@ initialise python environment with required packages
     './social_planner -w model.plk'
 
 If you wish to train you own model follow instructions at
-https://code.research.uts.edu.au/10173639/human-motion-rnn. Run training phase
-in rnn, it will create a directory refering to model and time of creating. Data
-in social_path_planner/data is already in .dense formate and does not need to
-be prepaired. NOTE functionality to run any model has temporarily been
+https://code.research.uts.edu.au/10173639/human-motion-rnn. there is a data
+directory to store data. Run training phase
+in rnn, it will create a directory refering to model and time of creating. 
+
+NOTE functionality to run any model has temporarily been
 depreciated as experimentation with apg-displacement model is conducted. 
     
