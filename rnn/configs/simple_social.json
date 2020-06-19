@@ -1,0 +1,18 @@
+{
+    "model_args": {
+        "global_radius": 10.0,
+        "global_resolution": 40,
+        "input_grid_mlp_layers": 2,
+        "input_grid_mlp_size": 128,
+        "input_mlp_layers": 2,
+        "input_mlp_size": 64,
+        "input_size": 2,
+        "local_radius": 1.0,
+        "local_resolution": 8,
+        "output_args": {},
+        "output_type": "direct",
+        "rnn_hidden_size": 128,
+        "rnn_layers": 2
+    },
+    "model_type": "simple_social"
+}

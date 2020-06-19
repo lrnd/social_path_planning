@@ -1,3 +1,0 @@
-int16[] agent_ids
----
-geometry_msgs/Point[] persons

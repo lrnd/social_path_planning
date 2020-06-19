@@ -1,0 +1,10 @@
+{
+    "model_args": {
+        "input_size": 2,
+        "output_args": {},
+        "output_type": "direct",
+        "rnn_hidden_size": 64,
+        "rnn_layers": 2
+    },
+    "model_type": "simple"
+}

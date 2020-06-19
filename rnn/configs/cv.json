@@ -1,0 +1,6 @@
+{
+    "model_args": {
+        "input_size": 2
+    },
+    "model_type": "cv"
+}

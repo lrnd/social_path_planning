@@ -1,7 +1,0 @@
-<launch>
-  <!-- start services-->
-  <node name="tracked_persons_utils" pkg="pedsim_srvs"
-  type="get_tracked_persons.py" output="screen" />
-
-</launch>
-
