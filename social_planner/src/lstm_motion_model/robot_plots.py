@@ -64,6 +64,7 @@ def plot_path_with_predictions(ground_truth, prediction, rbt_path):
     plt.pause(0.1)
     #plt.draw()
     plt.show()
+    plt.close()
 
 
 

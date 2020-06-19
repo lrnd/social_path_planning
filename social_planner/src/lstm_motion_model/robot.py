@@ -76,23 +76,18 @@ class Robot():
         if dims != 2:
             raise ValueError("pedestrian dimension incorrect")
 
-        show_animation = False
+        show_animation = True
 
         self.SetBoundry(positions)
 
         obstacles = lstm_motion_model.robot_utils.CreateObstacleList\
         (positions, self.ped_buf);
 
-        #self.goal_x = 7.19758
-        #self.goal_y = 0.629032
-
-
 #RRT ReedShepp
         if reed_shepp:
             max_iter = 200
             start=[self.x,self.y, np.deg2rad(0)]
             goal = [self.goal_x,self.goal_y, np.deg2rad(-90.0)]
-            #rand_area is [min_x, max_x, min_y, max_y]
             RRT = rrt.RRTStarReedsShepp(start=start,goal=goal,
                       obstacle_list=obstacles,
                       rand_area=[-self.boundry_x,self.boundry_x, -self.boundry_y, self.boundry_y],
@@ -110,9 +105,9 @@ class Robot():
                 plt.ylabel('Y(m)')
                 plt.plot([x for (x,y,yaw) in path], [y for (x,y,yaw) in path], 'r')
                 plt.grid(True)
-                plt.pause(0.1)
+                plt.pause(0.5)
                 plt.show()
-                #plt.draw()
+                plt.draw()
 
         else:
 #Vanilla RRT
@@ -131,7 +126,7 @@ class Robot():
                     RRT.draw_graph()
                     plt.plot([x for (x,y) in path], [y for (x, y) in path], '-r')
                     plt.grid(True)
-                    plt.pause(0.01)
+                    plt.pause(0.5)
                     plt.show()
 
         #assuming proper ammount of steps TODO
