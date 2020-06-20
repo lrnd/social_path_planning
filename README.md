@@ -32,20 +32,20 @@ Quick Start Guide
 -----------------
 
 open a terminal 
-    'cd catkin_ws/src'
-    'ln -s "ped_sim directory"
-    'cd ../'
-    'catkin_make'
-    'roslaunch pedsim_simulator sean.launch'
+* 'cd catkin_ws/src'
+* 'ln -s "ped_sim directory"
+* 'cd ../'
+* 'catkin_make'
+* 'roslaunch pedsim_simulator sean.launch'
 This should launch the pedestrian simulator as well as the srvs required to get
 pedestrian data
 
 open new terminal
 initialise python environment with the required packages
-    'cd social_path_planning'
-    'source source_me.sh'
-    'cd rnn/apg-disp'
-    './social_planner -w model.plk'
+* 'cd social_path_planning'
+* 'source source_me.sh'
+* 'cd rnn/apg-disp'
+* './social_planner -w model.plk'
 
 If you wish to train you own model follow instructions at
 https://code.research.uts.edu.au/10173639/human-motion-rnn. there is a data
@@ -64,10 +64,10 @@ run the inference of the model. For this reason the developments for this
 project are living in a very similar environment containing many of the
 packages from the human-motion-rnn project. The unique contributions of this
 project are
-    * social_planner/scripts/social_planner
-    * social_planner/src/robot.py
-    * social_planner/src/lstm_motion_model/robot_utils.py
-    * social_planner/src/lstm_motion_model/robot_plots.py
-    * social_planner/src/lstm_motion_model/rrt.py
+* social_planner/scripts/social_planner
+* social_planner/src/robot.py
+* social_planner/src/lstm_motion_model/robot_utils.py
+* social_planner/src/lstm_motion_model/robot_plots.py
+* social_planner/src/lstm_motion_model/rrt.py
 
 as well as modification to the existing files
