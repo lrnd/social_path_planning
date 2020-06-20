@@ -17,7 +17,6 @@ from pedsim_srvs.srv import GetAgentPos
 from geometry_msgs.msg import *
 from std_srvs.srv import Empty 
 
-#TODO make these part of function, not global
 global num_agents 
 global num_paths 
 global min_seq_req
@@ -25,7 +24,7 @@ global rbt_steps
 global p_weight
 global d_weight
 global max_work_per_ped
-#will need to change this, can pass as argument
+
 num_agents = 29 
 num_paths =3
 min_seq_req = 3
@@ -140,7 +139,7 @@ def main():
     #generates the min number of recorded position for APG
     for i in range(min_seq_req):
         pos.append(get_ped_positions(ids))
-        time.sleep(1)
+        time.sleep(0.1)
 
     pause_sim(True)
     #add pedestrian data into dataset, atm just one set
@@ -191,11 +190,8 @@ def main():
         rbt_path = rbt.GeneratePath(obsticlelist)
         rbt_path_for_predic = rbt_path
         if rbt_path is None:
-            #try again  TODO check this works in python
             print('ERROR, no path found, try again')
             return
-            p= p-1
-            continue
         #check if using rrt with theta value
         if len(rbt_path[0]) == 3:
             #remove theta value as not needed for APG-LSTM
