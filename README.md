@@ -37,15 +37,16 @@ open a terminal
 * 'cd ../'
 * 'catkin_make'
 * 'roslaunch pedsim_simulator sean.launch'
+
 This should launch the pedestrian simulator as well as the srvs required to get
 pedestrian data
 
-open new terminal
+open new terminal,
 initialise python environment with the required packages
 * 'cd social_path_planning'
 * 'source source_me.sh'
 * 'cd rnn/apg-disp'
-* './social_planner -w model.plk'
+* 'social_planner -w model.plk'
 
 If you wish to train you own model follow instructions at
 https://code.research.uts.edu.au/10173639/human-motion-rnn. there is a data
