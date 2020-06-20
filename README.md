@@ -13,7 +13,6 @@ Python 3 with the following packages:
 * sklearn
 * ROS, project was tested with ROS melodic
 
-Pedsim-ros-sean project to provide simulation environment
 
 note: converting data from spenser tracked msgs to .dense files (as required by
 network when training) requires python 2 and Spenser tracking msgs installed
