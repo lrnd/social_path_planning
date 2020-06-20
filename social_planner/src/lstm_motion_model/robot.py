@@ -93,8 +93,6 @@ class Robot():
                       rand_area=[-self.boundry_x,self.boundry_x, -self.boundry_y, self.boundry_y],
                       max_iter=max_iter, step_size=0.2)
             path = RRT.planning(animation=show_animation)
-            #paths.append(path)
-
             if path is None:
                 print("cannot find path")
                 return
@@ -105,8 +103,8 @@ class Robot():
                 plt.ylabel('Y(m)')
                 plt.plot([x for (x,y,yaw) in path], [y for (x,y,yaw) in path], 'r')
                 plt.grid(True)
-                plt.pause(0.5)
-                plt.show()
+                plt.pause(0.7)
+               # plt.show()
                 plt.draw()
 
         else:
@@ -129,7 +127,6 @@ class Robot():
                     plt.pause(0.5)
                     plt.show()
 
-        #assuming proper ammount of steps TODO
         return_path = []
         path.reverse()
             

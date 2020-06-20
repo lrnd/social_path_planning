@@ -489,7 +489,7 @@ class RRT:
         #plt.axis([-15, 15, -15, 15])
         plt.axis([self.min_rand, self.max_rand, self.min_rand, self.max_rand])
         plt.grid(True)
-        plt.pause(0.01)
+        plt.pause(0.1)
 
     @staticmethod
     def plot_circle(x, y, size, color="-b"):  # pragma: no cover
@@ -796,9 +796,9 @@ class RRTStarReedsShepp(RRTStar):
         plt.plot(self.end.x, self.end.y, "xr")
         plt.axis([-15, 15, -15, 15])
         #plt.axis([self.min_rand, self.max_rand, self.min_rand, self.max_rand])
-       # plt.grid(True)
+        plt.grid(True)
         self.plot_start_goal_arrow()
-       # plt.pause(0.01)
+        plt.pause(0.01)
 
     def plot_start_goal_arrow(self):
         plot_arrow(

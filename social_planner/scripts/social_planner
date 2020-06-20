@@ -103,9 +103,20 @@ def main():
 
     ##need to pass in the time sequence to generate path for
     #create robot with its pos and goal and speed
-    #hardcoded for now
-    robot_pos = [-11, 2]
-    robot_goal_pos = [9,-3]
+    invalid = True 
+    while invalid:
+        x = float(input("enter robot x position: "))
+        y = float(input("enter robot y position: "))
+        robot_pos = [x, y]
+        x = float(input("enter robot goal x position: "))
+        y = float(input("enter robot goal y position: "))
+        robot_goal_pos = [x,y]
+        if abs(robot_pos[0]) < 15 and abs(robot_goal_pos[0]) < 15 and \
+            abs(robot_pos[1]) < 15 and abs(robot_goal_pos[1]) < 15:
+            invalid = False
+        else:
+            print("invalid input, must be: -15 < val < 15")
+
     #creating robot
     rbt = Robot(robot_pos, robot_goal_pos, ped_buf=0.3)
 
@@ -129,7 +140,7 @@ def main():
     #generates the min number of recorded position for APG
     for i in range(min_seq_req):
         pos.append(get_ped_positions(ids))
-        time.sleep(0.2)
+        time.sleep(1)
 
     pause_sim(True)
     #add pedestrian data into dataset, atm just one set
@@ -234,7 +245,8 @@ def main():
     #end timing
     time_elapsed = (time.process_time() - time_start)
     print('computation time for ', num_paths, 'paths: ', time_elapsed)
-    robot_plots.plot_chosen_path(final_ped, rbt_paths[final_path])
+    plt = robot_plots.plot_chosen_path(final_ped, rbt_paths[final_path])
+    #plt.show()
 
     pause_sim(False)
 
@@ -348,8 +360,7 @@ def compute_social_predictions(model, dataset, sample_steps, device,
     try:
         hidden = model.init_hidden(num_people, device)
     except AttributeError as e:
-        #print(e)
-        #print('init_hidden not implemented. Assuming non-recursive model')
+        print('init_hidden not implemented. Assuming non-recursive model')
         hidden = None
 
     # Store input sequence

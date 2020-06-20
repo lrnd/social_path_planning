@@ -13,7 +13,6 @@ def plot_path_with_predictions(ground_truth, prediction, rbt_path):
     #add rbt is as last to plot, truth/pred the same
     truths_flip = empty([num_agents+1, steps, 2])
     pred_flip= empty([num_agents+1, steps, 2])
-    #for p in range(len(truths_org)):
     for s in range(steps):
         for p in range(num_agents+1):
             if p == num_agents:
@@ -60,11 +59,8 @@ def plot_path_with_predictions(ground_truth, prediction, rbt_path):
     plt.ylabel('Y(m)')
     plt.axis([-13,13,-13,13])
     plt.grid(True,which='major', alpha=1)
-    #plt.axis("equal")
-    plt.pause(0.1)
-    #plt.draw()
-    plt.show()
-    plt.close()
+    plt.pause(1)
+    return plt
 
 
 
@@ -137,8 +133,5 @@ def plot_chosen_path(prediction, rbt_path):
     plt.ylabel('Y(m)')
     plt.axis([-13,13,-13,13])
     plt.grid(True,which='major', alpha=1)
-    #plt.axis("equal")
-    #plt.pause(5)
-    #plt.draw()
-    plt.show()
+    return plt
     
