@@ -45,7 +45,7 @@ then download
 
 
 * if you have the annaconda package manager  https://docs.conda.io/projects/conda/en/latest/index.html the environment can
- be initialised by
+ be initialised by. This was the environment in which I was running the code
 
     - 'cd social_path_planning'
     - 'conda env create -f social_path_planning.yml'
