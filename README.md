@@ -35,7 +35,7 @@ Installation
         - 'cd 2ndparty/spencer_messages'
 then download
  https://github.com/spencer-project/spencer_messages/tree/3b392e7e5ba367dd23a3cc07e934e558229437d4
-        and copy into this directory
+        and copy project files into this directory
         - 'cd ../spencer_tracking_rviz_plugin/
 then download
  https://github.com/srl-freiburg/spencer_tracking_rviz_plugin/tree/9433aae7f99cd7b395281ee3af9ff3b629a53b09
