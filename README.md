@@ -26,6 +26,23 @@ Installation
 * Install ped_sim simulator from https://code.research.uts.edu.au/uts-cas/dwell-track/pedsim_ros/tree/sean/pedsim
     - need to download sean/pedsim version as contains updates to srvs,
       scenarios and launch files that are necessary. 
+    - unfortunately as this project actually lives in a different repository
+      and has submodules this bit is a bit hacky. The submodule update as shown in the
+      README on the master branch does not seem to work properly as the sim
+      cannot launch and cannot update project with my own files. A fix is to download sean/pedsim project then do as
+      follows:
+        - 'cd 'sean/pedsim-directory'
+        - 'cd 2ndparty/spencer_messages'
+then download
+ https://github.com/spencer-project/spencer_messages/tree/3b392e7e5ba367dd23a3cc07e934e558229437d4
+        and copy into this directory
+        - 'cd ../spencer_tracking_rviz_plugin/
+then download
+ https://github.com/srl-freiburg/spencer_tracking_rviz_plugin/tree/9433aae7f99cd7b395281ee3af9ff3b629a53b09
+ and copy the project files into this directory
+ this mimics the submodule update. Then follow the Quick Start Guide
+
+
 
 * if you have the annaconda package manager  https://docs.conda.io/projects/conda/en/latest/index.html the environment can
  be initialised by
@@ -37,6 +54,7 @@ the social path planning environment should now be listed
 
     - 'conda activate social_path_planning'
 to activate environment
+
 
 Quick Start Guide
 -----------------
