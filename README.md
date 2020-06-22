@@ -30,12 +30,12 @@ Installation
 * if you have the annaconda package manager  https://docs.conda.io/projects/conda/en/latest/index.html the environment can
  be initialised by
 
-- 'cd social_path_planning'
-- 'conda env create -f social_path_planning.yml'
-- 'conda env list'
+    - 'cd social_path_planning'
+    - 'conda env create -f social_path_planning.yml'
+    - 'conda env list'
 the social path planning environment should now be listed
 
-- 'conda activate social_path_planning'
+    - 'conda activate social_path_planning'
 to activate environment
 
 Quick Start Guide
