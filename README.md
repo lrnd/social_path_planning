@@ -27,6 +27,17 @@ Installation
     - need to download sean/pedsim version as contains updates to srvs,
       scenarios and launch files that are necessary. 
 
+* if you have the annaconda package manager  https://docs.conda.io/projects/conda/en/latest/index.html the environment can
+ be initialised by
+
+- 'cd social_path_planning'
+- 'conda env create -f social_path_planning.yml'
+- 'conda env list'
+the social path planning environment should now be listed
+
+- 'conda activate social_path_planning'
+to activate environment
+
 Quick Start Guide
 -----------------
 
@@ -41,7 +52,7 @@ This should launch the pedestrian simulator as well as the srvs required to get
 pedestrian data
 
 open new terminal,
-initialise python environment with the required packages
+initialise python environment with the required packages, see above
 * 'cd social_path_planning'
 * 'source source_me.sh'
 * 'cd rnn/apg-disp'
